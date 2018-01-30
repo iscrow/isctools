@@ -1,0 +1,62 @@
+#!/bin/bash
+# Based on http://linuxpixies.blogspot.jp/2011/06/tmux-copy-mode-and-how-to-control.html
+
+# a script to ssh multiple servers over multiple tmux panes
+
+
+starttmux() {
+  if [ -z "$PARAMS" ] || [ "$PARAMS" == '-h' ]; then
+    echo    "Usage examples:"
+    echo    ""
+    echo    "tmuxer 8                                   # Opens 8 panes with var= 1..8"
+    echo    "tmuxer Alice Bob Carol Dan                 # Opens 4 panes with var= Alice, Bob, Carol and Dan"
+    echo    "tmuxer 192.168.0. + 11 12 15               # Opens 3 panes with var= 192.168.0.11, 192.168.0.12 and 192.168.0.15"
+    echo    "You can also preload the parameters in environemnt variable TMUXER like this:"
+    echo    "TMUXER='www. + ikea.com nasa.gov' tmux     # Opens 2 panes with var= www.ikea.com and www.nasa.gov"
+    echo    ""
+    echo -n "Enter Parameters : "
+    read PARAMS
+    if [ "$PARAMS" == '' ]; then
+      echo You must provide some parameters... exiting.
+      exit 1
+    fi
+  fi
+
+  #Create an array vars from the list in $PARAMS
+  local vars=( $PARAMS )
+  title="MULTI"
+  if [ ${#vars[@]} -eq 1 ]; then
+    if [[ ${vars[0]} =~ ^[0-9]+$ ]] && [ ${vars[0]} -gt 0 ]; then
+      vars=($(seq 1 ${vars[0]}))
+    else
+      echo If you provide only a single parameter, it must be the number of the panes to open.
+      echo The parameter ${vars[@]} you provided is not a number greater than 0.
+      exit 1
+    fi
+  elif [ "${vars[1]}" == '+' ]; then # If the parameter format is 'const + var1 var2 ... varN'
+    const=${vars[0]}  # Grab const and remove it from the array
+    unset vars[0];    # Remove the constant from the vars
+    unset vars[1];    # Remove the + from the vars
+  fi
+  vars=(${vars[@]})   # Re-cast the vars array without the removed indexes
+
+  tmux new-window
+  tmux send-keys 'var='$const${vars[0]} C-m
+  tmux send-keys 'echo $var' C-m
+  panes=${#vars[@]}
+  unset vars[0];
+  for i in "${vars[@]}"; do
+    tmux split-window -h
+    tmux send-keys 'var='$const$i C-m
+    tmux send-keys 'echo $var' C-m
+    tmux select-layout tiled > /dev/null
+  done
+  tmux select-pane -t 0
+  tmux set-window-option synchronize-panes on > /dev/null
+  tmux rename-window MULTI+${const:=$panes}
+}
+
+#Use the PARAMS variable or command line parameters
+PARAMS=${TMUXER:=$*}
+
+starttmux
