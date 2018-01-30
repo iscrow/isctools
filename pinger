@@ -1,0 +1,165 @@
+#!/usr/bin/bash
+
+pushlimit=3 #How many total pushes are we allowed to send?
+pushcount=0
+streak=0
+upstreak=0
+downstreak=0
+count=9999
+maxup=0
+maxdown=0
+history=''
+bucket=''
+red='\e[91m'
+green='\e[92m'
+yellow='\e[93m'
+datecolor='\e[94m'
+nocolor='\e[0m'
+upc="${green}"
+up="${green}\u2b00"
+downc="${red}"
+down="${red}\u2b02"
+#pgdown="${red}\u21e9"
+pgdown="${red}\u2588"
+U='\u21e7'
+D='\u21e9'
+unset GREP_OPTIONS
+myshell=$(ps -p $$ -ocomm=)
+identity=$(basename "$0")
+timeout=1
+flood=""
+host="$1"
+ip=""
+printhost=""
+
+function valid_ip() {
+  local  ip=$1
+  local  stat=1
+
+  if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+    OIFS=$IFS
+    IFS='.'
+    ip=($ip)
+    IFS=$OIFS
+    [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+      && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+    stat=$?
+  fi
+return $stat
+}
+
+function resolve {
+  if valid_ip "$host"; then
+    ip="$host"
+    printhost="$ip"
+    return
+  fi
+  ip=$(getent hosts "$host" | awk '(NR == 1){print $1}')
+  if [ -z "$ip" ]; then
+    printhost="RESOLVING $host"
+  else
+    printhost="$host : $ip"
+  fi
+}
+
+
+[ "$2" ] && threshold=$2 || threshold=1
+
+
+if [ $myshell = "zsh" ]; then
+  setopt -s nocasematch #ZSH
+else
+  shopt -s nocasematch
+fi
+
+while true; do
+  start=$(date +%s%N | cut -b1-13)
+  [ -z "$ip" ] && resolve
+  #response=$(ping -W $timeout -w $timeout -s 1472 -c 1 $ip 2>&1)
+  #response=$(ping -W $timeout -w $timeout -c 1 $ip 2>&1)
+  response=$(ping -W 10 -c 1 $ip 2>&1)
+  errorcount=$(echo "$response" | egrep -c '(ping:|connect:|Unreachable|Unknown|Usage:)')
+  miss=$(echo "$response" | grep -c '100% packet loss')
+  responsecount=$(echo "$response" | egrep -c 'icmp_seq')
+  #hosterror=$(echo "$response" | sed -e 's/\(ping:|connect:\) \(.*\)/\2/g')
+  #[[ "$response" =~ 'Unreachable' ]] && hosterror="Unreachable"
+  #[[ "$response" =~ 'Unknown' ]] && hosterror="Destination Net Unknown"
+  [ -z "$ip" ] && responseerr="RESOLVING" || responseerr=$(echo "$response" | egrep icmp_seq | grep 'From\ ' | sed -e 's/.*icmp_seq=\S\s\+\(.*\)/\1/g')
+  response=$(echo "$response" | egrep icmp_seq | grep -v 'From\ ')
+  iperror=$responseerr
+  [ "$responseerr" != '' ] && responseerr="$responseerr "
+  currcount=$(echo "$response" | grep icmp_seq | wc -l)
+  rtt=$(echo "$response" | perl -pe "s/^(\d+) bytes from ([^:]+): icmp_seq=\d+ ttl=(\d+) time=([\d.]+) (\w+)$/\4/g")
+  response=$(echo "$response" | perl -pe "s/^(\d+) bytes from ([^:]+): icmp_seq=\d+ ttl=(\d+) time=([\d.]+) (\w+)$/\2 ${yellow}${responseerr}${nocolor}ttl=${upc}\3${nocolor} time=${upc}\4${nocolor}\5/g")
+
+  if [ $identity == "pingraph" ]; then
+    timeout=3
+    if [ $currcount -eq 1 ]; then
+      bar=$(bc -l <<< "scale = 1; $rtt/($threshold*1000)*7")
+      bar=$(bc <<< "($bar+0.5)/1")
+      [ "$bar" -gt 7 ] && bar=7
+      uc="\U$(( 2581+$bar))"
+    else
+      uc=$pgdown
+    fi
+    printf "$upc$uc$nocolor"
+    #echo rtt:$rtt bar:$bar timeout:$timeout
+    continue
+  fi
+
+  [ $currcount -eq 1 ] && s=$up || s=$down
+
+
+  if [ $currcount -eq $count ]; then
+    streak=$((streak + 1))
+  else
+    [ $count -ne 9999 ] && history=$history$trend
+    [ "$currcount" -eq 1 ] && [ "$2" != "" ] && [ "$downstreak" -ge "$2" ] && downstreak=0
+    [ "$currcount" -eq 0 ] && [ "$2" != "" ] && [ "$upstreak" -ge "$2" ] && upstreak=0
+    streak=1
+  fi
+
+  if [ $currcount -eq 1 ]; then
+    upstreak=$((upstreak + 1))
+  else
+    downstreak=$((downstreak + 1))
+  fi
+
+  #trend=$s$streak$s$nocolor
+  trend="$s$streak $nocolor"
+  if [ $currcount -eq 1 ]; then
+    if [ $streak -gt $maxup ]; then
+      maxup=$streak
+    fi
+  else
+    if [ $streak -gt $maxdown ]; then
+      maxdown=$streak
+    fi
+  fi
+  count=$currcount
+  date=${datecolor}$(date +"%b %d %Y %H:%M:%S")${nocolor}
+  if [ $count -eq 1 ]; then
+    message="$U${upc}$maxup${nocolor} $D${downc}$maxdown${nocolor} $date $response $history$trend"
+  #elif [ $errorcount -ne 0 ]; then
+  elif [ $miss -eq 1 ]; then
+    message="$U${upc}$maxup${nocolor} $D${downc}$maxdown${nocolor} $date ${downc}MISSED${nocolor} from $printhost $history$trend"
+  else
+    message="$U${upc}$maxup${nocolor} $D${downc}$maxdown${nocolor} $date ${downc}$iperror${nocolor} $history$trend"
+  fi
+  if [ $currcount -eq 1 ] && [ $streak = "$2" ] && [[ ! "$3" =~ "down" ]] && [ $pushcount -lt $pushlimit ]; then
+    message="$message :: Notifying!"
+    pushpipe --title "Pinger UP: $printhost" -m "<font color='blue'>Host <b>$printhost</b> is now up!</font>" &
+    pushcount=$(($pushcount +1))
+  fi
+  if [ $currcount -eq 0 ] && [ $streak = "$2" ] && [[ ! "$3" =~ "up" ]] && [ $pushcount -lt $pushlimit ]; then
+    message="$message :: Notifying!"
+    pushpipe --title "Pinger DOWN: $printhost" -m "<font color='red'>Host <b>$printhost</b> is now down!</font>" &
+    pushcount=$(($pushcount +1))
+  fi
+  echo -ne "\r$message";
+  tput el #Clear the rest of the line
+  #[ $currcount -eq 1 ] || [ $errorcount -ne 0 ] && sleep 1 #Sleep only if we got a response. If we didn't we would have waited 1 second waiting for it already.
+  end=$(date +%s%N | cut -b1-13)
+  timeleft=$(( 1000000 - ($end-$start)*1000 ))
+  [ $timeleft -gt 0 ] && usleep $timeleft #Sleep only if we got a response. If we didn't we would have waited 1 second waiting for it already.
+done
