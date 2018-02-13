@@ -111,7 +111,7 @@ function random() {
 if   [[ ${0,,} =~ 'compliment' ]]; then
   random "$compliments"
 elif [[ ${0,,} =~ 'insult' ]]; then
-  random "$compliments"
+  random "$insults"
 else
   echo 'Usage: symlink to insults-compliment links named insult and compliment'
   echo '       and run the links instead.'
