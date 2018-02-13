@@ -1,0 +1,124 @@
+#!/usr/bin/bash
+
+compliments="At the hairdressers, people just point at you and say 'like that'.
+I'd clean the hair out of the plughole for you.
+I'd follow you into battle. Or to the shops. Or just on Twitter. Up to you.
+If you tried, you could probably be quite famous.
+If you were a dinosaur you'd be a Legendasaurus Rex.
+If you were bacteria, you'd be the good kind.
+I like that when you see a dog you point at it and say &quot;dog&quot;.
+I once looked at your bum. I regret nothing.
+Is it a bird? Is it a plane? No. It's you, you massive legend.
+People talk about how nice you are behind your back.
+Thanks for always getting us to the airport 4 hours early.
+Things I wish I could be: Ninja. Astronaut. You.
+When my life flashes before my eyes, I hope it's mostly you.
+Without you the world would have fewer people in it.
+You are a terrible cook. But a brilliant human.
+You are more adorable than a baby panda riding a sneezing piglet.
+You have the best dance moves. They're both great.
+You're a glass of water after a long run.
+You’re a lot more intelligent than you look.
+You’re better than a perfectly ripe avocado.
+You're cooler than the other side of the pillow.
+You're more lovable than a baby hippo in a onesie.
+You're my favourite person to be hungover with.
+You're not big and clever. 
+You're perfectly layered. Like a lasagne.
+You're the bee's knees, the cat's pyjamas, the pheasant's bowtie.
+You're the first person I'd look for after an apocalyptic event.
+You’re the human equivalent of a bank holiday.
+Your hair is sleek and glossy like the mane of a mighty stallion.
+You should be everyone’s specialist subject on Mastermind.
+You could open that jar of mayonnaise using only 3 fingers.
+Strangers all wanna sit next to you on the bus.
+Coworkers fantasizes about getting stuck in the elevator with you.
+If Einstein could meet you, he'd be \"mildly to moderately\" intimidated.
+At least two friends are going to name their child and/or goldfish after you.
+socks + sandals + you = I'm into it.
+Your ex thought about you this morning, then they thought about donuts.
+You are freakishly good at thumb wars.
+A 3rd tier cable network would totally create a television show about you.
+The FBI tapped your phone just to hear the sound of your voice.
+You remind everyone of kiwis- delicious and surprisingly fuzzy.
+You never forget to fill the ice-cube tray.
+People enjoy you accidentally touching their butt while putting on your seat-belt.
+I’d give you the last piece of my gum even if I’d just ate garlic.
+There was a high school rumor that you are a distant relative of Abraham Lincoln.
+You could make up a weird religion or diet and everyone would follow it.
+Your siblings are pissed that your photo is the star of your parent's mantle.
+Everyone at sleepovers thought you were the bravest during thunderstorms.
+A doctor once saw your butt through the hospital gown. They approve!
+Someone almost got a tattoo of your name once, but their mom talked them out of it.
+You are your parent's greatest accomplishment, unless they invented the \"spork\".
+Some dudes hope you start a band so they can start a cover band of that band.
+Your principal would call you to the office just to look cool.
+Your allergies are some of the least embarrassing allergies.
+Your handshake conveys intelligence, confidence and minor claminess.
+Cops admire your ability to stay a perfect 3-5 miles above the speed limit.
+You rarely have to go to the bathroom when you fly in the window seat.
+Your roommate wants a lock of your hair but is afraid to ask.
+Cockroaches, mice and other pests avoid your place out of respect.
+Callers are intimidated by how funny your voicemail greeting is.
+Kids think you are the “cool old person”.
+People always think your jeggings are regular jeans.
+80% of motorcycle gangs think you’d be a delightful sidecar.
+Everyone at the laundromat thinks you have the cutest underwear.
+People behind you at movies think you are the perfect height.
+Your parents argue over which one of them you look like.
+Sushi chefs are wowed by your chopstick dexterity.
+You want the best for everyone...except Gary.
+You are someone's \"the one that got away\"."
+
+insults="Why don't you act like a human being or don't you do impersonations?
+You're NUMBER ONE in my book.  My book is called \"Creeps I Have Known\".
+You're bound to marry well - everyone is above you.
+There's nothing I won't do for you - and I'm going to keep on doing it.
+You're outstanding in your field, and that's where you should be -- out standing in your field.
+When I want your remarks, I'll rattle your cage.
+Would you mind reaching into your heart and getting me a piece of ice?
+I'm forming an attachment for you - it fits right over your mouth.
+Keep talking - you'll think of something to say.
+You're just what the doctor ordered - shock treatment.
+Why don't you take a powder - preferably arsenic.
+You came from nothing, and you brought it with you.
+You've given me something to live for - REVENGE.
+You're not the person you used to be - and you never were.
+You have so much ugly, you could open store.
+If there's nothing to say, I'm sure you'll say it.
+You're quite a charmer - I'll get you a snake and a flute.
+Do I need you?  About as much as Custer needed more Indians.
+Do I need you?  About as much as the \"Titanic\" needed more water.
+You're the kind of person I can't get over, so I'll go around you.
+Let me say three little words that will make you dance on air: \"Go hang yourself!\"
+Your heart's in the right place - it's your head I'm worried about.
+You're making a fool of yourself, and I've never seen better craftmanship.
+When people ask me what I see in you, what can I tell them?
+I'd love to paint you - do you prefer varnish ot lacquer?
+I've heard alot about you - now let's hear your side of the story.
+I'd like to help you out - Which way did you come in?
+Of course I'll give you a hand - right across the mouth."
+
+function random() {
+  if [ $(which shuf 2>/dev/null) ]; then
+    random=$(echo "$1" | grep -v '^$' | shuf -n1)
+  else
+    random=$(echo "$1" | grep -v '^$' | perl -MList::Util=shuffle -e 'print shuffle(<STDIN>);' | head -n1)
+  fi
+  echo "$random"
+}
+
+if   [[ ${0,,} =~ 'compliment' ]]; then
+  random "$compliments"
+elif [[ ${0,,} =~ 'insult' ]]; then
+  random "$compliments"
+else
+  echo 'Usage: symlink to insults-compliment links named insult and compliment'
+  echo '       and run the links instead.'
+  echo
+  echo '       ln -s compliments-insults compliment'
+  echo '       ln -s compliments-insults insult'
+  echo '       ./compliment'
+  echo '       ./insult'
+  echo
+fi
