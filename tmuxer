@@ -12,7 +12,7 @@ starttmux() {
     echo    "tmuxer Alice Bob Carol Dan                 # Opens 4 panes with var= Alice, Bob, Carol and Dan"
     echo    "tmuxer 192.168.0. + 11 12 15               # Opens 3 panes with var= 192.168.0.11, 192.168.0.12 and 192.168.0.15"
     echo    "You can also preload the parameters in environemnt variable TMUXER like this:"
-    echo    "TMUXER='www. + ikea.com nasa.gov' tmux     # Opens 2 panes with var= www.ikea.com and www.nasa.gov"
+    echo    "TMUXER='www. + ikea.com nasa.gov' tmuxer   # Opens 2 panes with var= www.ikea.com and www.nasa.gov"
     echo    ""
     echo -n "Enter Parameters : "
     read PARAMS
