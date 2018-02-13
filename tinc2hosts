@@ -1,0 +1,102 @@
+#!/usr/bin/bash
+
+# The hosts file to process.
+HOSTSFILE=/etc/hosts
+
+TINC_NETWORK=$1
+DRYRUN=$2
+
+function usage() {
+  echo "  Usage: $0 TincNetworkName"
+  echo "Dry Run: $0 TincNetworkName dryrun"
+  echo
+  echo 'Optionally, add an entry in your hosts file of the format:'
+  echo '#TINCNETALIASES=gamenetwork:g,friendsnet:friend'
+  echo 'Which will allow you to change the prefix to added hostname.'
+  echo 'By default host Lambda on tinc network Oberon will be added as:'
+  echo '<ip address> oberon-Lambda'
+  echo 'But if you add an entry in the hosts file #TINCNETALIASES=Oberon:o'
+  echo 'The host Lambda will be added as:'
+  echo '<ip address> oLambda'
+  echo
+}
+
+if [ -z "$TINC_NETWORK" ]; then
+  usage
+  exit
+fi
+
+# If a second parameter is provided and it's not "dryrun", freak out and exit.
+if [ ! -z $DRYRUN ] && [ "${DRYRUN,,}" != "dryrun" ]; then
+  echo Invalid option for dryrun: $DRYRUN
+  echo
+  usage
+  exit
+fi
+
+# Parse the hostsfile for a TINCNETALIASES parameter and deduce the appropriate prefix from it, or use default.
+PREFIX="$TINC_NETWORK-"
+TINCNETALIASES=$(grep -i '#TINCNETALIASES=' $HOSTSFILE | tail -n 1 | sed -e 's/#TINCNETALIASES=//gi')
+if [ ! -z "$TINCNETALIASES" ]; then
+  #Found Tinc Network Aliases in hosts file
+  #TINCNETALIASES=gamenetwork:g,friendsnet:friend
+  TINC_NET_ALIAS_GROUPS=$( echo $TINCNETALIASES | tr , \  )
+  for TINC_NET_ALIAS_GROUP in $TINC_NET_ALIAS_GROUPS; do
+    IFS=: read TINC_NET TINC_ALIAS <<< $TINC_NET_ALIAS_GROUP
+    if [ ${TINC_NET,,} = ${TINC_NETWORK,,} ]; then
+      PREFIX=$TINC_ALIAS
+    fi
+  done
+fi
+
+# See if tinc gives us any hosts for the provided network. Exit if not.
+TINC_HOSTS=$(sudo tinc -n $TINC_NETWORK dump subnets | grep -v broadcast | sed -e 's/ owner /|/g')
+TINC_NUMBER_OF_HOSTS=$(echo -n "$TINC_HOSTS" | grep -c '^')
+if [ $TINC_NUMBER_OF_HOSTS -lt 1 ]; then
+  echo No tinc hosts found for network name $TINC_NETWORK
+  echo
+  exit
+fi
+
+NEW_TINC_HOSTS=$(sudo tinc -n $TINC_NETWORK dump subnets | grep -v broadcast | sed -e "s/ owner / $PREFIX/g")
+
+# Create  temporary hosts file for the newly generted one.
+NEW_HOSTSFILE=$(mktemp -t hosts.XXXXXXXX)
+{
+  while read HOSTS_LINE; do
+    HOSTS_LINE=$(echo $HOSTS_LINE)
+    # If the hosts line starts with an IPv4 IP address, proces it
+    if [[ "$HOSTS_LINE" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+      MATCH=0
+      # Look for any hosts from the tinc network that match the current line
+      for TINC_HOST in $TINC_HOSTS; do
+        IFS='|' read IP HOST <<< $TINC_HOST
+        [[ "${HOSTS_LINE,,}" =~ [\ \t]$PREFIX${HOST,,}([\ \t\#]|$) ]] && MATCH=1 && break
+      done
+      NEW_HOSTS_ENTRY=$(echo -e "$IP $PREFIX$HOST")
+      if [ $MATCH -eq 1 ]; then
+        # If a match is found the hosts file entry is a conflict so we comment it out.
+        [ "${NEW_HOSTS_ENTRY,,}" != "${HOSTS_LINE,,}" ] && echo -e "#$HOSTS_LINE"
+      else
+        # It's not a conflict. We'll put it back untouched in the new hosts file.
+        echo -e "$HOSTS_LINE"
+      fi
+    else
+      # The hosts file line did not start with an IPv4 address, so we pass it through.
+      echo $HOSTS_LINE
+    fi
+  done < $HOSTSFILE
+  # Now that we've commented out the conflicts/duplicates, we print the new entries out.
+  echo "$NEW_TINC_HOSTS"
+} > $NEW_HOSTSFILE
+
+if [ -z "$DRYRUN" ]; then
+  # If this is not a dry run, overwrite the original hosts file with the new one.
+  sudo mv "$NEW_HOSTSFILE" "$HOSTSFILE"
+else
+  # If this is a dry run, print out the new hosts file and delete it without overwriting the original.
+  echo Dry Run:
+  echo '-----------'
+  cat $NEW_HOSTSFILE
+  rm "$NEW_HOSTSFILE"
+fi

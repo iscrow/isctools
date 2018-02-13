@@ -18,7 +18,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 shopt -s extglob #Enable glob exclusions
 
 CMD="ln -f -s $DIR/!(LICENSE) $TARGET"
-echo I am going to exexute the following command. Press CTRL-C to STOP or any other key to continue:
+echo I am going to execute the following command. Press CTRL-C to STOP or any other key to continue:
 echo $CMD
 read
 $CMD
