@@ -1,0 +1,14 @@
+#!/bin/sh
+
+#Kill all background processes when this wrapper is killed
+trap 'kill $(jobs -p)' EXIT
+
+#Iterate through given file
+for file in "$@"
+do
+  #Tail each one
+	tail -f $file &
+done
+
+#Wait until wrapper is terminated (CTRL-C)
+wait
