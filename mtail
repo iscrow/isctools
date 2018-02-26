@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #Kill all background processes when this wrapper is killed
-trap 'kill $(jobs -p)' EXIT
+trap 'kill $(jobs -p) 2>/dev/null' EXIT INT
 
 #Iterate through given file
 for file in "$@"
