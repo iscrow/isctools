@@ -1,0 +1,5 @@
+#!/bin/bash
+host=$(echo $1 | sed -e 's/.*@\(.*\)/\1/g')
+cat ~/.ssh/known_hosts | grep -vi  $host > ~/.ssh/known_hosts_rssh
+mv ~/.ssh/known_hosts_rssh ~/.ssh/known_hosts
+ssh $*
