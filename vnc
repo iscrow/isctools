@@ -6,7 +6,7 @@ if [ "$#" -lt 1 ]; then
   exit
 fi
 
-host=$1
+TARGETHOST=$1
 shift
 
-java -jar /usr/share/vnc/classes/VncViewer.jar $1 ScalingFactor="FixedRatio" RemoteResize=0 $*
+java -jar /usr/share/vnc/classes/VncViewer.jar $TARGETHOST ScalingFactor="FixedRatio" RemoteResize=0 $*
