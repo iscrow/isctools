@@ -9,4 +9,4 @@ fi
 TARGETHOST=$1
 shift
 
-java -jar /usr/share/vnc/classes/VncViewer.jar $TARGETHOST ScalingFactor="FixedRatio" RemoteResize=0 $*
+java -jar /usr/share/vnc/classes/VncViewer.jar $TARGETHOST ScalingFactor="FixedRatio" RemoteResize=0 Shared=1 $*
