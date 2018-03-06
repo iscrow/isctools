@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#RATIO=FixedRatio
+RATIO=Auto
+
 if [ "$#" -lt 1 ]; then
   echo "Usage: $0 host [other options]"
   echo
@@ -9,4 +12,4 @@ fi
 TARGETHOST=$1
 shift
 
-java -jar /usr/share/vnc/classes/VncViewer.jar $TARGETHOST ScalingFactor="FixedRatio" RemoteResize=0 Shared=1 $*
+java -jar /usr/share/vnc/classes/VncViewer.jar $TARGETHOST ScalingFactor="$RATIO" RemoteResize=0 Shared=1 $*
