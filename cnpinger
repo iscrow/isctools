@@ -1,0 +1,84 @@
+#!/bin/env bash
+INTERVAL=0.02
+SIZE=0
+YSCALE=1
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -i|--interval)
+    INTERVAL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -s|--size)
+    SIZE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -y|--yscale)
+    YSCALE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -d|--debug)
+    DEBUG="echo"
+    shift # past argument
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+
+if [ "$YSCALE" -le 0 ]; then
+  #If YSCALE is 0, or a negative number then set it to auto
+	YSCALE=""
+fi
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+CNPING="cnping"
+BASE=""
+
+if [ "$2" == "+" ]; then
+	BASE=$1
+	shift
+	shift #Shift past + sign
+fi
+
+if [ -z "$*" ]; then
+	echo "Usage: cnpinger [-i|--interval 0.02] [-s|--size 0] [-y|--yscale 1 (use 0 for auto)] hosts"
+	echo "Examples:"
+	echo "cnpinger -i 0.01 192.168.1.1"
+	echo "cnpinger 192.168.1.1 192.168.1.2"
+	echo "cnpinger 192.168.1. + 1,9-11,15  #Equivalent to cnpinger 192.168.1.1  192.168.1.9 192.168.1.10 192.168.1.11 192.168.1.15" 
+	echo "cnpinger computer + 1-20  #Equivalent to cnpinger computer1 computer2 ... computer20"
+	exit
+fi
+
+expset=$(echo $* | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
+expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
+set -- "$expset"
+
+CNARGS="$INTERVAL $SIZE $YSCALE"
+
+if [ ! -z "$DEBUG" ]; then
+	#If debuggin, print out parameters
+	[ -z "$YSCALE" ] && PRINTYSCALE=dynamic || PRINTYSCALE=$YSCALE
+	echo "Extra ping period: $INTERVAL"
+	echo "Extra ping size:   $SIZE"
+	echo "GuiYScaleFactor:   $PRINTYSCALE"
+	echo
+	echo "Resulting Commands:"
+fi
+
+for var in $*; do
+	COMMAND="$CNPING $BASE$var $CNARGS"
+	$DEBUG $COMMAND 2>&1 | grep -v -e 'Event:' &
+done
+
