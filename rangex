@@ -1,0 +1,30 @@
+#!/bin/env bash
+
+DELIMITER=" "
+
+if [ $# -eq 0 ]; then
+	echo "Usage: rangex [-d|--delimiter ,] 3,5,9-13,17"
+  exit
+fi
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+	key="$1"
+	case $key in
+		-d|--delimiter)
+			DELIMITER="$2"
+			shift # past argument
+			shift # past value
+		;;
+		*)    # unknown option
+			POSITIONAL+=("$1") # save it in an array for later
+			shift # past argument
+		;;
+	esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+expset=$(echo $* | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
+expset=$(echo echo $expset | sh | tr , "\n" | sort -V | sed -e "s/$/$DELIMITER/g" | tr -d "\n" | sed -e 's/,$//g')
+echo "$expset"
+

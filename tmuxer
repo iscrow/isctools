@@ -22,6 +22,19 @@ starttmux() {
     fi
   fi
 
+  BASE=$(echo "$PARAMS" | awk -F'+' '{print $1}')
+  SEQ=$(echo "$PARAMS" | awk -F'+' '{print $2}')
+  if [[ -z "${SEQ// }" ]]; then
+    EXPAND="$BASE"
+    BASE=""
+  else
+    BASE="$BASE +"
+    EXPAND="$SEQ"
+  fi
+  expset=$(echo $EXPAND | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
+  expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
+  PARAMS="$BASE $expset"
+
   #Create an array vars from the list in $PARAMS
   local vars=( $PARAMS )
   title="MULTI"
