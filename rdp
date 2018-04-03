@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$#" -lt 1 ]; then
+  echo "Usage: $0 host [other options]"
+  echo
+  exit
+fi
+
+TARGETHOST=$1
+shift
+
+xfreerdp /scale-desktop:400 /smart-sizing:2048x1024 /v:$TARGETHOST $*
