@@ -10,5 +10,4 @@ TARGETHOST=$1
 shift
 
 #With keyboard grabbing disabled
-#xfreerdp /scale-desktop:400 /smart-sizing:2048x1024 /v:$TARGETHOST $* -grab-keyboard
-xfreerdp /scale-desktop:400 /smart-sizing:2048x1024 /v:$TARGETHOST $*
+xfreerdp /scale-desktop:400 /smart-sizing /w:1920 /h:1080 /v:$TARGETHOST $* -grab-keyboard
