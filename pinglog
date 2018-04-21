@@ -1,0 +1,79 @@
+#!/bin/bash
+
+ip=$1
+logfile=$2
+
+SECONDS=0
+
+[ -z "$logfile" ] && logfile="/tmp/pinglog-$ip"
+
+if [ -z "$ip" ] || [ -z "$logfile" ]; then
+	echo
+	echo pinglog Usage:
+	echo
+	echo pinglog ip [logfile]
+	echo Example: pinglog 10.10.1.1 /tmp/10.10.1.1
+	echo Will log the timestamp of every ping hit/miss transition to /tmp/10.10.1.1
+	echo
+	exit
+fi
+
+touch "$logfile"
+if [ $? -ne 0 ] || [ -d "$logfile" ]; then
+	echo Cannot use logfile: $logfile
+	exit 1
+fi
+
+# Log without a newline
+function logn() {
+        echo -n "$(date) :: $*" >> $logfile
+}
+
+# Log with a newline
+function log() {
+        logn "$*"
+        echo >> $logfile
+}
+
+# Log a line complition without a time stamp
+function logc() {
+        echo "$*" >> $logfile
+}
+
+function finish() {
+	logc " for $SECONDS seconds ($PINGS pings)"
+	log "Ended monitoring of $ip"
+        exit 1
+}
+
+# Clean up on exit
+trap finish INT TERM
+
+last=""
+PINGS=0
+
+log "Started monitoring of $ip"
+
+while true; do
+	((PINGS++))
+	if (ping -c 1 $ip &>/dev/null); then
+		#Got a response
+		if [ "$last" != 'up' ]; then
+			[ -z "$last" ] || logc " for $SECONDS seconds ($PINGS pings)"
+			logn "$ip was UP"
+			SECONDS=0
+			PINGS=0
+		fi
+		last=up
+		sleep 0.1
+	else
+		#Got a miss
+		if [ "$last" != 'down' ]; then
+			[ -z "$last" ] || logc " for $SECONDS seconds ($PINGS pings)"
+			logn "$ip was DOWN"
+			SECONDS=0
+			PINGS=0
+		fi
+		last=down
+	fi
+done
