@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ip="$1"
+port="$2"
+
+if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/[0-9]+$ ]] || [[ ! "$port" =~ ^[0-9+$] ]]; then
+	echo
+	echo portscan Usage:
+	echo
+	echo portscan iprange port
+	echo Example: portscan 192.168.0.0/24 80
+	echo Will print a list of IPs in 192.168.0.0/24 with open port 80
+	echo
+	exit
+fi
+sudo nmap -p$port -n $ip -sS -oG - | grep open | awk '{print $2}'

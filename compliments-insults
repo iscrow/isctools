@@ -108,12 +108,15 @@ function random() {
   echo "$random"
 }
 
-if   [[ ${0,,} =~ 'compliment' ]]; then
+RAN_AS=$(basename $0)
+
+if   [ $RAN_AS == 'compliment' ] || [ "$1" == "compliment"  ]; then
   random "$compliments"
-elif [[ ${0,,} =~ 'insult' ]]; then
+elif [ $RAN_AS == 'insult' ] || [ "$1" == "insult" ]; then
   random "$insults"
 else
-  echo 'Usage: symlink to insults-compliment links named insult and compliment'
+  echo 'Usage: compliments-insults [ compliment | insult ]'
+  echo 'Alternative Usage: symlink to insults-compliment links named insult and compliment'
   echo '       and run the links instead.'
   echo
   echo '       ln -s compliments-insults compliment'

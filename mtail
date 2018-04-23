@@ -7,7 +7,7 @@ trap 'kill $(jobs -p) 2>/dev/null' EXIT INT
 for file in "$@"
 do
   #Tail each one
-	tail -f $file &
+	tail -F $file &
 done
 
 #Wait until wrapper is terminated (CTRL-C)
