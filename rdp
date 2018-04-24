@@ -10,4 +10,12 @@ TARGETHOST=$1
 shift
 
 #With keyboard grabbing disabled
-xfreerdp /scale-desktop:400 /smart-sizing /w:1920 /h:1080 /v:$TARGETHOST /sec:rdp $* -grab-keyboard
+OUT=$(xfreerdp /scale-desktop:400 /smart-sizing /w:1920 /h:1080 /v:$TARGETHOST /sec:tls $* -grab-keyboard 2>&1 | grep 'Protocol Security Negotiation Failure')
+FAIL=$(echo -n "$OUT" | grep -c '^')
+if [ $FAIL -ne 0 ]; then
+	OUT=$(xfreerdp /scale-desktop:400 /smart-sizing /w:1920 /h:1080 /v:$TARGETHOST /sec:rdp $* -grab-keyboard 2>&1 | grep 'Protocol Security Negotiation Failure')
+	FAIL=$(echo -n "$OUT" | grep -c '^')
+	if [ $FAIL -ne 0 ]; then
+		xfreerdp /scale-desktop:400 /smart-sizing /w:1920 /h:1080 /v:$TARGETHOST $* -grab-keyboard
+	fi
+fi
