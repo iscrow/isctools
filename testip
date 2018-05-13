@@ -1,0 +1,24 @@
+#!/bin/env bash
+
+
+state=down
+if [ "$1" == "" ]; then
+  while true; do
+    if [ "$state" == "down" ]; then
+      sudo ifconfig lo:0 192.168.33.33 netmask 255.255.255.255
+      echo "lo:1 192.168.33.33 /32 (hostname: testip) is up"
+      state=up
+    else
+      sudo ifconfig lo:0 down
+      echo "lo:0 192.168.33.33 /32 (hostname: testip) is down"
+      state=down
+    fi
+    read -n 1 key
+  done
+elif [ "$1" == "down" ]; then
+  sudo ifconfig lo:0 down
+  echo "lo:0 192.168.33.33 /32 (hostname: testip) is down"
+elif [ "$1" == "up" ]; then
+  sudo ifconfig lo:0 192.168.33.33 netmask 255.255.255.255
+  echo "lo:1 192.168.33.33 /32 (hostname: testip) is up"
+fi
