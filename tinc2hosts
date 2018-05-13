@@ -93,6 +93,7 @@ NEW_HOSTSFILE=$(mktemp -t hosts.XXXXXXXX)
 if [ -z "$DRYRUN" ]; then
   # If this is not a dry run, overwrite the original hosts file with the new one.
   sudo mv "$NEW_HOSTSFILE" "$HOSTSFILE"
+  chmod 644 $HOSTSFILE
 else
   # If this is a dry run, print out the new hosts file and delete it without overwriting the original.
   echo Dry Run:
