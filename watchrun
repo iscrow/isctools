@@ -1,0 +1,24 @@
+#!/bin/bash
+. colors.sh
+
+if [ $# -lt 2 ]; then
+	echo 'Usage: watchrun file_to_watch command_to_run [command arguments]'
+	exit
+fi
+
+echo Press any key to quit
+
+FILE="$1"
+shift
+COMMAND="$*"
+
+while [ -z "$PRESSED" ]; do
+	CHANGED=$(stat -c %y "$FILE")
+	if [ "$CHANGED" != "$LASTCHANGED" ]; then
+		echo "$YELLOW$BGRED$(date)  Running: $COMMAND$NC"
+		$COMMAND
+		echo "$WHITE$BGLBLUE$(date) Finished: $COMMAND$NC"
+		LASTCHANGED="$CHANGED"
+	fi
+	read -t 0.1 -N 1 PRESSED
+done
