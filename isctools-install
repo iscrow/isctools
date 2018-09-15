@@ -18,8 +18,15 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 shopt -s extglob #Enable glob exclusions
 
 CMD="ln -f -s $DIR/!(LICENSE) $TARGET"
-echo I am going to execute the following command. Press CTRL-C to STOP or any other key to continue:
+echo "I am going to execute the following commands:"
 echo $CMD
-read
+
+while [[ ! "$GO" =~ ^(y|n)$ ]]; do
+	echo -n "Write config? (y/n)"
+	read GO
+done
+[ "$GO" != "y" ] && echo "You entered '$GO'. Exiting install..." && exit
+echo "Installing..."
 $CMD
+echo "Done!"
 
