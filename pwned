@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+[ ! -z "$1" ] && echo NO! BAD! Do not put passwords on the command line! Just run me, all ask you for it and it will be just etween us! && exit
+
+echo "I'll as for your password. Nothing will show up when you type it but I can see it."
+echo -n "Password: "
+read -s PASS
+
+SHA=$(echo -n "$PASS" | sha1sum)
+FIVE=${SHA:0:5}
+REST=$(echo ${SHA:5} | cut -d\  -f1)
+
+echo
+MATCH=$(curl -s https://api.pwnedpasswords.com/range/$FIVE)
+if [ $? -ne 0 ]; then
+	echo "Can't contact the pwnedpasswords.com API. Fix your connection and try again. Exiting..."
+	exit
+fi
+
+MATCH=$(echo "$MATCH" | grep -i "$REST")
+USES=$(echo "$MATCH" | strings | cut -d: -f2)
+
+if [ -z "$USES" ]; then
+	echo "I like your password. It has not been pawned as far as we know!"
+else
+	echo "I found $USES uses of this password. DO NOT USE!"
+fi
