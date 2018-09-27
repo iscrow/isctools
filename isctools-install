@@ -17,9 +17,12 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 shopt -s extglob #Enable glob exclusions
 
-CMD="ln -f -s $DIR/!(LICENSE) $TARGET"
+for FILE in $(ls "$DIR"); do
+	[ "$FILE" != "README.md" ] && [ "$FILE" != "LICENSE" ] && CMD="${CMD}sudo ln -f -s '$DIR/$FILE' '$TARGET/$FILE'"$'\n'
+done
+
 echo "I am going to execute the following commands:"
-echo $CMD
+echo "$CMD"
 
 while [[ ! "$GO" =~ ^(y|n)$ ]]; do
 	echo -n "Write config? (y/n)"
@@ -27,6 +30,4 @@ while [[ ! "$GO" =~ ^(y|n)$ ]]; do
 done
 [ "$GO" != "y" ] && echo "You entered '$GO'. Exiting install..." && exit
 echo "Installing..."
-$CMD
-echo "Done!"
-
+echo "$CMD" | bash
