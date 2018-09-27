@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-[ ! -z "$1" ] && echo "NO! BAD! Do not put passwords on the command line! Just run me, all ask you for it and it will be just etween us!" && exit
+[ ! -z "$1" ] && echo "NO! BAD! Do not put passwords on the command line! Just run me, all ask you for it and it will be just between us!" && exit
 
 command -v    curl >/dev/null 2>&1 || { echo "You'll need curl in the path for this. Install it and try again. Exiting..."; exit 1; }
 command -v sha1sum >/dev/null 2>&1 || { echo "You'll need sha1sum in the path for this. Install it and try again. Exiting..."; exit 1; }
 
-echo "I'll as for your password. Nothing will show up when you type it but I can see it."
+echo "I'll ask for your password. Nothing will show up when you type it but I can see it."
 echo -n "Password: "
 read -s PASS
 
