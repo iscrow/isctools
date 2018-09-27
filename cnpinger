@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 INTERVAL=0.02
 SIZE=0
 YSCALE=1

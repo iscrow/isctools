@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 pushlimit=3 #How many total pushes are we allowed to send?
 pushcount=0

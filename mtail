@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #Kill all background processes when this wrapper is killed
 trap 'kill $(jobs -p) 2>/dev/null' EXIT INT

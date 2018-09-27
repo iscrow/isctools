@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 #Usage:
 #. colors.sh
 #echo $RED RED $BGRED $YELLOW Yellow on Red $NC Normal

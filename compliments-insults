@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 compliments="At the hairdressers, people just point at you and say 'like that'.
 I'd clean the hair out of the plughole for you.

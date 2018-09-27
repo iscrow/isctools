@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # The hosts file to process.
 HOSTSFILE=/etc/hosts
