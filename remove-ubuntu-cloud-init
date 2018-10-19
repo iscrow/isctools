@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+if [ "$#" -ne 1 ]; then
+	echo "Usage: remove-ubuntu-cloud-init user@server"
+	exit 1
+fi
+
+ADDRESS="$1"
+
+ssh -t $ADDRESS '
+	echo "On the next screen deselect everything except None."
+	sudo dpkg-reconfigure cloud-init
+	echo "Removing cloud-init"
+	sudo apt-get purge cloud-init
+	echo "Moving /etc/cloud and /var/lib/cloud to /root/"
+	sudo mv /etc/cloud/ ~/etc-cloud.backup
+	sudo mv /var/lib/cloud/ ~/var-lib-cloud.backup
+	echo "Checking for services that wait indefinitely for the network to start"
+	for SERVICE in $(sudo systemctl show -p WantedBy network-online.target | tr " " "\n" | grep -v WantedBy=)
+	do echo -n "$SERVICE will wait indefinitely for the network to start. Disable $SERVICE? (y/n): "
+		read -n 1 ANSWER
+		[[ "$ANSWER" =~ y|Y ]] && sudo systemctl disable $SERVICE || echo "You answered ($ANSWER). Skipping..."
+	done
+	echo "All done."'
