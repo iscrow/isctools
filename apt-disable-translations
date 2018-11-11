@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 1 ]; then
+	echo 'Usage: apt-disable-translations user@host'
+	exit 1
+fi
+
+ssh $1 'echo  '"'"'Acquire::Languages "none";'"'"' > /etc/apt/apt.conf.d/99translations'
