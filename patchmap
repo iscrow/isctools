@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+DELIMITER=" "
+
+if [ $# -ne 5 ]; then
+	echo "Usage: patchmap Interface BASE SEQ_START SEQ_END LOG"
+	echo "Example:"
+	echo "  patchmap eth0 BLU_E 1 48 HQPorts.log"
+	echo "Interfaces:"
+	ip -br addr show
+  exit
+fi
+
+INTERFACE=$1
+BASE=$2
+START=$3
+END=$4
+LOG=$5
+
+function getName {
+	grep -P 'System Name|Device-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
+}
+
+function getPort {
+	grep -P 'Port Description|Port-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
+}
+
+function getIP {
+	grep -P 'Management Address length|Address \(' | sed -E -e 's/.* //g' -e "s/'//g"
+}
+
+function getData {
+	#cat lldp
+	sudo tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 '(ether[12:2]=0x88cc or ether[20:2]=0x2000)' 2> /dev/null
+}
+
+NUM=00
+
+echo Will use interface $INTERFACE
+
+for NUM in $(seq -w $START $END); do
+	echo Press Enter to scan $BASE$NUM
+	read
+	echo -ne "Listening...\033[0K\r"
+	DATA=$(getData)
+	NAME=$(getName <<< $DATA)
+	PORT=$(getPort <<< $DATA)
+	IP=$(getIP <<< $DATA)
+	echo $BASE$NUM,$IP,$NAME,$PORT,$(date) | tee -a $LOG
+done
+
+echo Completed logging $BASE$START - $BASE$END on $INTERFACE to $LOG in $SECONDS seconds.
+
+
