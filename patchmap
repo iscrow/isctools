@@ -1,19 +1,43 @@
 #!/usr/bin/env bash
 
-if [ $# -ne 5 ]; then
-	echo "Usage: patchmap Interface BASE SEQ_START SEQ_END LOG"
-	echo "Example:"
-	echo "  patchmap eth0 BLU_E 1 48 HQPorts.log"
+if [ -z "$*" ] || [ "$*" == '-h' ] || [ $# -lt 3 ]; then
+	echo    "Usage examples:"
+	echo    "  patchmap eth0 ports.txt port1              # This will map port1"
+	echo    "  patchmap eth0 ports.txt port1 port2 port3  # This will map port1 port2 port3"
+	echo    "  patchmap eth0 ports.txt BLU E + 1-48       # This will map BLU E01, BLU E02... BLU E48"
+	echo    "  patchmap eth0 ports.txt PORT_ + 1-48       # This will map PORT_01, PORT_02... PORT_48"
+	echo    "  patchmap eth0 ports.txt PORT_ + 1,4-8      # This will map PORT_1, PORT_4... PORT_8"
+	echo    ""
 	echo "Interfaces:"
 	ip -br addr show
-  exit
-fi
+	exit 1
+ fi
 
-INTERFACE=$1
-BASE=$2
-START=$3
-END=$4
-LOG=$5
+INTERFACE="$1"
+LOG="$2"
+
+shift 2
+
+BASE=$(echo "$*" | awk -F'+' '{print $1}')
+SEQ=$(echo "$*" | awk -F'+' '{print $2}')
+if [[ -z "${SEQ// }" ]]; then
+	EXPAND="$BASE"
+	BASE=""
+else
+	BASE="$BASE +"
+	EXPAND="$SEQ"
+fi
+expset=$(echo $EXPAND | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -w -s, \1 \2)/g')
+expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
+PARAMS="$BASE $expset"
+#Create an array vars from the list in $PARAMS
+if [[ "$PARAMS" =~ '+' ]]; then # If the parameter format is 'const + var1 var2 ... varN'
+	const=$( echo $PARAMS | cut -d'+' -f1 | sed -E -e's/^\s+//g' -e's/\s+$//g' )  # Get the constant part
+	vars=( $( cut -d'+' -f2 <<< $PARAMS ) ) # Get the variables
+else
+	vars=( $PARAMS )
+fi
+echo $vars
 
 function getName {
 	grep -P 'System Name|Device-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
@@ -33,17 +57,19 @@ function getData {
 
 echo Will use interface $INTERFACE
 
-for NUM in $(seq -w $START $END); do
-	echo Press Enter to scan $BASE$NUM
+for var in "${vars[@]}"; do
+	DEV="$const$var"
+	echo "Press ENTER to scan $DEV"
 	read
 	echo -ne "Listening...\033[0K\r"
 	DATA=$(getData)
 	NAME=$(getName <<< $DATA)
 	PORT=$(getPort <<< $DATA)
 	IP=$(getIP <<< $DATA)
-	echo $BASE$NUM,$IP,$NAME,$PORT,$(date) | tee -a $LOG
+
+	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
 done
 
-echo Completed logging $BASE$START - $BASE$END on $INTERFACE to $LOG in $SECONDS seconds.
+echo Completed logging to $LOG in $SECONDS seconds.
 
 
