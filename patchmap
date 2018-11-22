@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-DELIMITER=" "
 
 if [ $# -ne 5 ]; then
 	echo "Usage: patchmap Interface BASE SEQ_START SEQ_END LOG"
@@ -32,8 +31,6 @@ function getData {
 	#cat lldp
 	sudo tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 '(ether[12:2]=0x88cc or ether[20:2]=0x2000)' 2> /dev/null
 }
-
-NUM=00
 
 echo Will use interface $INTERFACE
 
