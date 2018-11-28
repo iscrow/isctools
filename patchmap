@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+TIMEOUT=35 #Seconds
+
+ESPEAK=$(which espeak)
 if [ -z "$*" ] || [ "$*" == '-h' ] || [ $# -lt 3 ]; then
 	echo    "Usage examples:"
 	echo    "  patchmap eth0 ports.txt port1              # This will map port1"
@@ -10,8 +13,10 @@ if [ -z "$*" ] || [ "$*" == '-h' ] || [ $# -lt 3 ]; then
 	echo    ""
 	echo "Interfaces:"
 	ip -br addr show
+	echo
+	[ -z "$ESPEAK" ] && echo "Install espeak for voice feedback!" || echo "Espeak detected and will be used for voice feedback!"
 	exit 1
- fi
+fi
 
 INTERFACE="$1"
 LOG="$2"
@@ -37,7 +42,6 @@ if [[ "$PARAMS" =~ '+' ]]; then # If the parameter format is 'const + var1 var2 
 else
 	vars=( $PARAMS )
 fi
-echo $vars
 
 function getName {
 	grep -P 'System Name|Device-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
@@ -52,7 +56,11 @@ function getIP {
 }
 
 function getData {
-	sudo tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 '(ether[12:2]=0x88cc or ether[20:2]=0x2000)' 2> /dev/null
+	sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 '(ether[12:2]=0x88cc or ether[20:2]=0x2000)' 2> /dev/null
+}
+
+function speak {
+	[ -z "$ESPEAK" ] || espeak "$*" &>/dev/null &
 }
 
 echo Will use interface $INTERFACE
@@ -60,12 +68,16 @@ echo Will use interface $INTERFACE
 for var in "${vars[@]}"; do
 	DEV="$const$var"
 	echo "Press ENTER to scan $DEV"
+	speak "ENTER to scan $DEV"
 	read
-	echo -ne "Listening...\033[0K\r"
+	speak Scanning
+	echo -ne "Listening for up to $TIMEOUT sec...\033[0K\r"
 	DATA=$(getData)
 	NAME=$(getName <<< $DATA)
 	PORT=$(getPort <<< $DATA)
 	IP=$(getIP <<< $DATA)
+
+	[ -z "$DATA" ] && speak "Timeout" || speak "Got it" 
 
 	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
 done
