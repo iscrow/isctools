@@ -60,7 +60,7 @@ function getData {
 }
 
 function speak {
-	[ -z "$ESPEAK" ] || espeak "$*" &>/dev/null &
+	[ -z "$ESPEAK" ] || espeak "$*" &>/dev/null
 }
 
 echo Will use interface $INTERFACE
@@ -68,9 +68,9 @@ echo Will use interface $INTERFACE
 for var in "${vars[@]}"; do
 	DEV="$const$var"
 	echo "Press ENTER to scan $DEV"
-	speak "ENTER to scan $DEV"
+	speak "ENTER to scan $DEV" &
 	read
-	speak Scanning
+	speak Scanning &
 	echo -ne "Listening for up to $TIMEOUT sec...\033[0K\r"
 	DATA=$(getData)
 	NAME=$(getName <<< $DATA)
