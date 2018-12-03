@@ -56,7 +56,8 @@ function getIP {
 }
 
 function getData {
-	sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 '(ether[12:2]=0x88cc or ether[20:2]=0x2000)' 2> /dev/null
+	local FILTER='not proto UDP and (ether[12:2]=0x88cc or ether[20:2]=0x2000)'
+	sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 "$FILTER" 2> /dev/null
 }
 
 function speak {
