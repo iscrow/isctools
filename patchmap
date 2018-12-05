@@ -80,9 +80,8 @@ for var in "${vars[@]}"; do
 	
 	if [ -z "$DATA" ]; then
 		LINK=$(ethtool $INTERFACE | grep 'Link detected' | awk '{print $3}')
-	 	[ "$LINK" == "yes" ] && LINKSTATE="with link"
+	 	[ "$LINK" == "yes" ] && LINKSTATE="with link" && NAME='Link Present' || NAME='No Link'
 		speak "Timeout $LINKSTATE"
-		NAME="Timoeut, Link: $LINK"
 		PORT='Timeout'
 		IP='Timeout'
 	else
