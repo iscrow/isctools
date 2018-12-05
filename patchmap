@@ -79,7 +79,7 @@ for var in "${vars[@]}"; do
 	IP=$(getIP <<< $DATA)
 	
 	if [ -z "$DATA" ]; then
-		LINK=$(ethtool $INTERFACE | grep 'Link detected' | awk '{print $3}')
+		LINK=$(ethtool $INTERFACE 2>/dev/null | grep 'Link detected' | awk '{print $3}')
 	 	[ "$LINK" == "yes" ] && LINKSTATE="with link" && NAME='Link Present' || NAME='No Link'
 		speak "Timeout $LINKSTATE"
 		PORT='Timeout'
