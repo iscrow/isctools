@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TIMEOUT=35 #Seconds
+TIMEOUT=10 #Seconds
 
 ESPEAK=$(which espeak)
 if [ -z "$*" ] || [ "$*" == '-h' ] || [ $# -lt 3 ]; then
@@ -68,17 +68,26 @@ echo Will use interface $INTERFACE
 
 for var in "${vars[@]}"; do
 	DEV="$const$var"
-	echo "Press ENTER to scan $DEV"
-	speak "ENTER to scan $DEV" &
+	echo "Press Enter to scan $DEV"
+	speak "Enter to scan $DEV" &
 	read
 	speak Scanning &
-	echo -ne "Listening for up to $TIMEOUT sec...\033[0K\r"
+	echo -ne "Scanning for up to $TIMEOUT sec...\033[0K\r"
 	DATA=$(getData)
 	NAME=$(getName <<< $DATA)
 	PORT=$(getPort <<< $DATA)
 	IP=$(getIP <<< $DATA)
-
-	[ -z "$DATA" ] && speak "Timeout" || speak "Got it" 
+	
+	if [ -z "$DATA" ]; then
+		LINK=$(ethtool $INTERFACE | grep 'Link detected' | awk '{print $3}')
+	 	[ "$LINK" == "yes" ] && LINKSTATE="with link"
+		speak "Timeout $LINKSTATE"
+		NAME="Timoeut, Link: $LINK"
+		PORT='Timeout'
+		IP='Timeout'
+	else
+		speak "Got it" 
+	fi
 
 	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
 done
