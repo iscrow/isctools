@@ -68,26 +68,33 @@ echo Will use interface $INTERFACE
 
 for var in "${vars[@]}"; do
 	DEV="$const$var"
-	echo "Press Enter to scan $DEV"
+	echo "Press Enter to scan $DEV PgUp/PgDown/Esc to skip"
 	speak "Enter to scan $DEV" &
-	read
-	speak Scanning &
-	echo -ne "Scanning for up to $TIMEOUT sec...\033[0K\r"
-	DATA=$(getData)
-	NAME=$(getName <<< $DATA)
-	PORT=$(getPort <<< $DATA)
-	IP=$(getIP <<< $DATA)
+	read -n 1 RESPONSE
+	if [[ ! $(echo $RESPONSE | hexdump | head -n 1) =~ '0a1b' ]]; then
+		speak Scanning &
+		echo -ne "Scanning for up to $TIMEOUT sec...\033[0K\r"
+		DATA=$(getData)
+		NAME=$(getName <<< $DATA)
+		PORT=$(getPort <<< $DATA)
+		IP=$(getIP <<< $DATA)
 	
-	if [ -z "$DATA" ]; then
-		LINK=$(ethtool $INTERFACE 2>/dev/null | grep 'Link detected' | awk '{print $3}')
-	 	[ "$LINK" == "yes" ] && LINKSTATE="with link" && NAME='Link Present' || NAME='No Link'
-		speak "Timeout $LINKSTATE"
-		PORT='Timeout'
-		IP='Timeout'
+		if [ -z "$DATA" ]; then
+			LINK=$(ethtool $INTERFACE 2>/dev/null | grep 'Link detected' | awk '{print $3}')
+			[ "$LINK" == "yes" ] && LINKSTATE="with link" && NAME='Link Present' || NAME='No Link'
+			speak "Timeout $LINKSTATE"
+			PORT='Timeout'
+			IP='Timeout'
+		else
+			speak "Got it"
+			echo "Skipping $DEV"
+		fi
 	else
-		speak "Got it" 
+		speak Skip
+		NAME="Skipped"
+		PORT="Skipped"
+		IP="Skipped"
 	fi
-
 	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
 done
 
