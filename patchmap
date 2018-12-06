@@ -68,10 +68,16 @@ echo Will use interface $INTERFACE
 
 for var in "${vars[@]}"; do
 	DEV="$const$var"
-	echo "Press Enter to scan $DEV PgUp/PgDown/Esc to skip"
-	speak "Enter to scan $DEV" &
-	read -n 1 RESPONSE
-	if [[ ! $(echo $RESPONSE | hexdump | head -n 1) =~ '0a1b' ]]; then
+	echo "Press PgDown to scan $DEV PgUp to skip"
+	speak "Page Down to scan $DEV" &
+	while [ -z "$KEY" ]; do
+		read -r -sn1 RESPONSE
+		case $RESPONSE in
+			5) KEY=pgup ;;
+			6) KEY=pgdown ;;
+		esac
+	done
+	if [ "$KEY" == "pgdown" ]; then
 		speak Scanning &
 		echo -ne "Scanning for up to $TIMEOUT sec...\033[0K\r"
 		DATA=$(getData)
@@ -95,6 +101,7 @@ for var in "${vars[@]}"; do
 		PORT="Skipped"
 		IP="Skipped"
 	fi
+	KEY=
 	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
 done
 
