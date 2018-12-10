@@ -1,5 +1,23 @@
 #!/usr/bin/env bash
 
+TIMEOUT=60
+
+sudo -v #Check if user has sudo permission
+if [ $? -ne 0 ]; then
+	echo You need sudo access to use this script. Exiting...
+	exit 1
+fi
+
+if [ -z "$(which tcpdump)" ]; then
+	echo "You need tcpdump installed and in the path to be able to use portid. Exiting..."
+	echo 1
+fi
+
+if [ -z "$(which ethtool)" ]; then
+	echo "You need ethtool installed and in the path to be able to use portid. Exiting..."
+	echo 1
+fi
+
 function getInterfaces {
 	INTERFACES=$(ip -br addr show | cut -d\  -f1  | grep -v '^lo$')
 }
@@ -8,36 +26,20 @@ contains() {
 	[[ " $(echo $list) " =~ " $x " ]] && exit 0 || exit 1
 }
 
-WANTEDIF="$1"
-
-
-
-
-
+INTERFACES="$(ip -br addr show | cut -d\  -f1 | grep -v lo)"
 INTERFACE="$1"
+
+if ! echo $INTERFACE | grep -iqF "$INTERFACES"; then
+	select INTERFACE in $INTERFACES ALL; do
+		[ "$INTERFACE" == "ALL" ] && INTERFACE="$INTERFACES"
+		break
+	done
+fi
+
+
 LOG="$2"
 
 shift 2
-
-BASE=$(echo "$*" | awk -F'+' '{print $1}')
-SEQ=$(echo "$*" | awk -F'+' '{print $2}')
-if [[ -z "${SEQ// }" ]]; then
-	EXPAND="$BASE"
-	BASE=""
-else
-	BASE="$BASE +"
-	EXPAND="$SEQ"
-fi
-expset=$(echo $EXPAND | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -w -s, \1 \2)/g')
-expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
-PARAMS="$BASE $expset"
-#Create an array vars from the list in $PARAMS
-if [[ "$PARAMS" =~ '+' ]]; then # If the parameter format is 'const + var1 var2 ... varN'
-	const=$( echo $PARAMS | cut -d'+' -f1 | sed -E -e's/^\s+//g' -e's/\s+$//g' )  # Get the constant part
-	vars=( $( cut -d'+' -f2 <<< $PARAMS ) ) # Get the variables
-else
-	vars=( $PARAMS )
-fi
 
 function getName {
 	grep -P 'System Name|Device-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
@@ -51,56 +53,33 @@ function getIP {
 	grep -P 'Management Address length|Address \(' | sed -E -e 's/.* //g' -e "s/'//g"
 }
 
+function getLink {
+	ethtool $1 2>/dev/null | grep -Pi 'Link detected: (yes|no)' | sed -E 's/.*Link detected: (yes|no)/\1/gi'
+}
+
 function getData {
-	local FILTER='not proto UDP and (ether[12:2]=0x88cc or ether[20:2]=0x2000)'
-	sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 "$FILTER" 2> /dev/null
-}
-
-function speak {
-	[ -z "$ESPEAK" ] || espeak "$*" &>/dev/null
-}
-
-echo Will use interface $INTERFACE
-
-for var in "${vars[@]}"; do
-	DEV="$const$var"
-	echo "Press PgDown to scan $DEV PgUp to skip"
-	speak "Page Down to scan $DEV" &
-	while [ -z "$KEY" ]; do
-		read -r -sn1 RESPONSE
-		case $RESPONSE in
-			5) KEY=pgup ;;
-			6) KEY=pgdown ;;
-		esac
-	done
-	if [ "$KEY" == "pgdown" ]; then
-		speak Scanning &
-		echo -ne "Scanning for up to $TIMEOUT sec...\033[0K\r"
-		DATA=$(getData)
-		NAME=$(getName <<< $DATA)
-		PORT=$(getPort <<< $DATA)
-		IP=$(getIP <<< $DATA)
-	
-		if [ -z "$DATA" ]; then
-			LINK=$(ethtool $INTERFACE 2>/dev/null | grep 'Link detected' | awk '{print $3}')
-			[ "$LINK" == "yes" ] && LINKSTATE="with link" && NAME='Link Present' || NAME='No Link'
-			speak "Timeout $LINKSTATE"
-			PORT='Timeout'
-			IP='Timeout'
-		else
-			speak "Got it"
-			echo "Skipping $DEV"
-		fi
-	else
-		speak Skip
-		NAME="Skipped"
-		PORT="Skipped"
-		IP="Skipped"
+	local INTERFACE=$1
+	local PREFIX="$INTERFACE ->"
+	LINK=$(getLink $INTERFACE)
+	if [ "$LINK" == "no" ]; then
+		echo "$PREFIX NO LINK"
+		exit 1
 	fi
-	KEY=
-	echo $DEV,$IP,$NAME,$PORT,$(date) | tee -a $LOG
+	local FILTER='not proto UDP and (ether[12:2]=0x88cc or ether[20:2]=0x2000)'
+	DATA=$(sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 "$FILTER" 2> /dev/null)
+	[ $? -ne 0 ] && echo "$PREFIX TIMEOUT($TIMEOUT sec)" && exit 1
+	NAME=$(getName <<< $DATA)
+	PORT=$(getPort <<< $DATA)
+	IP=$(getIP <<< $DATA)
+	echo "$PREFIX IP: $IP,   Name: $NAME,   Port: $PORT"
+	echo "$DATA" | grep -v ' LLDP, length ' | grep -P --color '\t   *[^:]+$|: .*$|$'
+	echo
+}
+
+for I in $INTERFACE; do
+	getData $I &
 done
 
-echo Completed logging to $LOG in $SECONDS seconds.
+wait
 
 
