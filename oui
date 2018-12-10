@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+MAC=$1
+OUI=$(sed -e 's/[^0-9a-fA-F]//g' <<< $MAC | cut -c1-6)
+
+if [ ${#OUI} -ne 6 ]; then
+	echo 'OUI identifies the vendor of a mac address/OUI'
+	echo 'Where OUI is "Organizational Unit Identifier" - the first half (24 bits) of a mac address'
+	echo 'usage: oui mac_address/OUI'
+	echo
+	exit 1
+fi
+
+BEARER="eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtYWN2ZW5kb3JzIiwiZXhwIjoxODU4OTUwMzQ1LCJpYXQiOjE1NDQ0NTQzNDUsImlzcyI6Im1hY3ZlbmRvcnMiLCJqdGkiOiJiZGEzY2ZjOC00OWJjLTRiMmYtODI4ZS0xNGE1MmIzZmY0ZTYiLCJuYmYiOjE1NDQ0NTQzNDQsInN1YiI6Ijk5MCIsInR5cCI6ImFjY2VzcyJ9.voDcQ9Dh-VaMV4gF3lFdlXQ_XlRLN1TPqSaJMk9mprbAtmoR8aBas7Xyqk26yX38qL6l0NvEO-uP2QUS8xEH4Q"
+
+VENDOR=$(curl -Gs "https://api.macvendors.com/v1/lookup/$OUI" \
+              -H "Authorization: Bearer $BEARER" \
+              -H "Accept: text/plain")
+
+echo "$OUI -> $VENDOR"
