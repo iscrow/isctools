@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+BASE="/tmp/overlord"
+WAIT=1 #How long to wait for additional output
+WAIT=$(echo "$WAIT/60" | bc -l)
+
+SESSION="$1"
+shift
+COMMANDS="$*"
+
+
+function getSessions {
+	SESSIONS=$(screen -ls | grep -Pc "\.${SESSION}\t" )
+}
+
+function startSession {
+	screen -dmS $SESSION
+	screen -S $SESSION -p0 -X stuff "$COMMANDS | tee $SSTDOUT ; exit \015"
+	touch $SSTDOUT
+}
+
+function sendCommand {
+	CMD=$(cut -d\| -f1 <<< $COMMANDS)
+	screen -r $SESSION -p0 -X stuff "$CMD\015"
+	touch $SSTDOUT
+}
+
+function getSTDOUT {
+	PIPE=$(echo $COMMANDS | grep '|' | cut -d\| -f2-)
+	[ -f "$SSTDOUT" ] || return 1
+	while true; do
+		[ -z "$(find $SSTDOUT -mmin -$WAIT)" ] && break
+		sleep 0.1
+	done
+	if [ -z "$PIPE" ]; then
+		cat $SSTDOUT | strings
+	else
+		cat $SSTDOUT | strings | eval "$PIPE"
+	fi
+	: > $SSTDOUT
+}
+
+[ -d "$BASE" ] || mkdir -p "$BASE"
+SSTDOUT="$BASE/$SESSION"
+
+getSessions
+[ $SESSIONS -gt 2 ] && echo Too many sessions named $SESSION && exit 1
+
+if [ $SESSIONS -eq 0 ]; then
+	startSession
+	getSessions
+	[ $SESSIONS -ne 1 ] && echo Session $SESSION failed to start && exit 1
+fi
+
+while true; do
+echo -n '→ '
+read COMMANDS
+echo "$COMMANDS"
+
+if [ "$SESSIONS" -eq 0 ]; then
+	>&2 echo "Session $SESSION no longer exists"
+	[ -f "$SSTDOUT" ] && rm "$SSTDOUT"
+else
+	sendCommand
+	getSTDOUT	
+fi
+
+done
