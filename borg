@@ -33,9 +33,9 @@ function getSTDOUT {
 		sleep 0.1
 	done
 	if [ -z "$PIPE" ]; then
-		cat $SSTDOUT | strings
+		cat $SSTDOUT
 	else
-		cat $SSTDOUT | strings | eval "$PIPE"
+		cat $SSTDOUT | eval "$PIPE"
 	fi
 	: > $SSTDOUT
 }
