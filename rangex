@@ -24,7 +24,13 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+if [ "$2" == "+" ]; then
+	prefix="$1"
+	shift
+	shift
+fi
+	
 expset=$(echo $* | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
-expset=$(echo echo $expset | sh | tr , "\n" | sort -V | sed -e "s/$/$DELIMITER/g" | tr -d "\n" | sed -e 's/,$//g')
+expset=$(echo echo $expset | sh | tr , "\n" | sort -V |sed -E "s/^/$prefix/g"| sed -e "s/$/$DELIMITER/g" | tr -d "\n" | sed -e 's/,$//g')
 echo "$expset"
 
