@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+export DEVICE=$1
+shift
+export COMMAND="$*"
+
+if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
+	echo "Usage: . cisco_command hostname command"
+	echo "Example: . cisco_command myrouter show runn"
+	return 1
+	exit 1
+fi
+
+
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
 	
@@ -16,16 +28,6 @@ fi
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 
-export DEVICE=$1
-shift
-export COMMAND="$*"
-
-if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
-	Usage: cisco_command host command
-	Example: cisco_command myrouter show runn
-	exit 1
-fi
-
 function runCommand {
 	/usr/bin/env expect -c '
 	set timeout 30
@@ -38,9 +40,15 @@ function runCommand {
 	log_user 0
 
 	spawn -noecho ssh $USER@$DEVICE
-
-	expect "Password:"
-	send "$PASS\r"
+  expect {
+		"yes/no" {
+			send "yes\r"
+			exp_continue
+		}
+		"Password:" {
+			send "$PASS\r"
+		}
+	}
 	expect ">"
 	send "en\r$ENABLE\r"
 	expect "#" {

@@ -4,6 +4,8 @@ TMP=/tmp
 CMD=cisco_showrunn
 CACHE_EXPIRE_MIN=5
 
+FORCE=""
+
 PARAMS=""
 for i in $(seq $#); do
   case "$1" in
@@ -20,6 +22,15 @@ done
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
 
+export DEVICE=$1
+
+if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
+	echo "Usage: . cisco_shrunn hostname command"
+	echo "Example: . cisco_shrunn myrouter"
+	return 1
+	exit 1
+fi
+
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
 	
@@ -33,7 +44,6 @@ if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo
 fi
 
-export DEVICE=$1
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 
@@ -44,7 +54,7 @@ GLOB=cache-*.$CMD
 find $TMP -maxdepth 1 -iname $GLOB -mmin +$CACHE_EXPIRE_MIN -exec rm {} \;
 
 function getConfig {
-	[ -f "$CACHE" ] && cat "$CACHE" && return 0
+	[ "$FORCE" != "FORCE" ] && [ -f "$CACHE" ] && cat "$CACHE" && return 0
 	cisco_command $DEVICE show runn 
 	[ -z "$CFG" ] || echo "$CFG" > $CACHE
 	echo "$CFG"
