@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+#ip_valiade <ip address>
+#Returns the IP address if it's valid
+#Returns nothing and exits with error status 1 if the IP is invalid
+
+IN="$1"
+
+IP=$(pcregrep '\d+\.\d+\.\d+\.\d+' <<< $IN | tr '.' ' ')
+
+[ -z "$IP" ] && exit 1
+
+for OCTET in $(pcregrep '\d+\.\d+\.\d+\.\d+' <<< $IN | tr '.' ' '); do
+	[ "$OCTET" -gt 255 ] && exit 1
+done
+
+echo $IN
