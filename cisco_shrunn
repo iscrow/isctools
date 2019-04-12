@@ -1,5 +1,24 @@
 #!/usr/bin/env bash
 
+TMP=/tmp
+CMD=cisco_showrunn
+CACHE_EXPIRE_MIN=5
+
+PARAMS=""
+for i in $(seq $#); do
+  case "$1" in
+    -f|--force)
+      FORCE=FORCE
+      shift
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
 
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
@@ -14,15 +33,11 @@ if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo
 fi
 
-TMP=/tmp
-CMD=cisco_showrunn
-CACHE_EXPIRE_MIN=5
-
-export HOST=$1
+export DEVICE=$1
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 
-SUM=$(echo -n $HOST | sha1sum | cut -d\  -f1)
+SUM=$(echo -n $DEVICE | sha1sum | cut -d\  -f1)
 CACHE=$TMP/cache-$SUM.$CMD
 GLOB=cache-*.$CMD
 
@@ -30,40 +45,10 @@ find $TMP -maxdepth 1 -iname $GLOB -mmin +$CACHE_EXPIRE_MIN -exec rm {} \;
 
 function getConfig {
 	[ -f "$CACHE" ] && cat "$CACHE" && return 0
-	/usr/bin/env expect -c '
-	set timeout 30
-	set HOST $::env(HOST)   
-	set USER "admin"
-	set PASS $::env(PASS)   
-	set ENABLE $::env(ENABLE)   
-
-	log_user 0
-
-	spawn -noecho ssh $USER@$HOST
-
-	expect "Password:"
-	send "$PASS\r"
-	expect ">"
-	send "en\r$ENABLE\r"
-	expect "#" {
-		send "terminal length 0\r"
-		expect "#"
-		# This is to clean up the previous expect_out(buffer) content
-		# So that, we can get the exact output what we need.
-		expect *;         
-		log_user 1
-		send "show running-config\r"
-		#expect "end\r"
-		expect -re {end\r}
-		log_user 0
-		#send_user $expect_out(buffer);
-	}' | grep -Pv '[^#]+#$' | tee "$CACHE"
+	cisco_command $DEVICE show runn 
+	[ -z "$CFG" ] || echo "$CFG" > $CACHE
+	echo "$CFG"
 }
 
 CFG="$(getConfig)"
-read IP_GIG_01 MASK_GIG_01 <<< $(echo "$CFG" | pcregrep -M  'interface GigabitEthernet0/1(\n|.)*?^\s+ip address' |	grep 'ip address' | sed 's/ ip address //g')
-read IP_FE_000 MASK_FE_000 <<< $(echo "$CFG" | pcregrep -M  'interface GigabitEthernet0/1(\n|.)*?^\s+ip address' |	grep 'ip address' | sed 's/ ip address //g')
-echo "$IP_GIG_01"
-echo "$MASK_GIG_01"
-echo "$IP_FE_000"
-echo "$MASK_FE_000"
+echo "$CFG"

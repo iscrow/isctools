@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
+	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
+	
+	>&2 echo -n 'Password: '
+	read -s CISCO_SHOWRUNN_PASS
+	export CISCO_SHOWRUNN_PASS
+	>&2 echo
+	>&2 echo -n 'Enable: '
+	read -s CISCO_SHOWRUNN_ENABLE
+	export CISCO_SHOWRUNN_ENABLE
+	>&2 echo
+fi
+
+export PASS="$CISCO_SHOWRUNN_PASS"
+export ENABLE="$CISCO_SHOWRUNN_ENABLE"
+
+export DEVICE=$1
+shift
+export COMMAND="$*"
+
+if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
+	Usage: cisco_command host command
+	Example: cisco_command myrouter show runn
+	exit 1
+fi
+
+function runCommand {
+	/usr/bin/env expect -c '
+	set timeout 30
+	set DEVICE $::env(DEVICE)   
+	set COMMAND $::env(COMMAND)   
+	set USER "admin"
+	set PASS $::env(PASS)   
+	set ENABLE $::env(ENABLE)   
+
+	log_user 0
+
+	spawn -noecho ssh $USER@$DEVICE
+
+	expect "Password:"
+	send "$PASS\r"
+	expect ">"
+	send "en\r$ENABLE\r"
+	expect "#" {
+		send "terminal length 0\r"
+		expect "#"
+		# This is to clean up the previous expect_out(buffer) content
+		# So that, we can get the exact output what we need.
+		expect *;         
+		send "$COMMAND\r"
+		log_user 1
+		expect -re "#$"
+	}' | grep -Pv '[^#]+#$'
+}
+
+runCommand
