@@ -24,8 +24,8 @@ eval set -- "$PARAMS"
 
 export DEVICE=$1
 
-if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
-	echo "Usage: . cisco_shrunn hostname command"
+if [ -z "$DEVICE" ]; then
+	echo "Usage: . cisco_shrunn hostname"
 	echo "Example: . cisco_shrunn myrouter"
 	return 1
 	exit 1
