@@ -49,13 +49,14 @@ export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 
 SUM=$(echo -n $DEVICE | sha1sum | cut -d\  -f1)
 CACHE=$TMP/cache-$SUM.$CMD
+echo cache $CACHE
 GLOB=cache-*.$CMD
 
 find $TMP -maxdepth 1 -iname $GLOB -mmin +$CACHE_EXPIRE_MIN -exec rm {} \;
 
 function getConfig {
 	[ "$FORCE" != "FORCE" ] && [ -f "$CACHE" ] && cat "$CACHE" && return 0
-	cisco_command $DEVICE show runn 
+	local CFG="$(cisco_command $DEVICE show runn)"
 	[ -z "$CFG" ] || echo "$CFG" > $CACHE
 	echo "$CFG"
 }
