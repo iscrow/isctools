@@ -23,6 +23,7 @@ if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	read -s CISCO_SHOWRUNN_ENABLE
 	export CISCO_SHOWRUNN_ENABLE
 	>&2 echo
+	>&2 echo
 fi
 
 export PASS="$CISCO_SHOWRUNN_PASS"
@@ -60,7 +61,7 @@ function runCommand {
 		send "$COMMAND\r"
 		log_user 1
 		expect -re "#$"
-	}' | grep -Pv '[^#]+#$'
+	}' | grep -Pv '[^#]+#$' | grep -Pv "^$COMMAND\s*$"
 }
 
 runCommand
