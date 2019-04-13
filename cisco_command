@@ -60,7 +60,7 @@ function runCommands {
 			# This is to clean up the previous expect_out(buffer) content
 			# So that, we can get the exact output what we need.
 			expect *;         
-			send "$COMMAND\r"
+			send "[string trim $COMMAND]\r"
 			log_user 1
 			expect -re "#$"
 		}
