@@ -2,12 +2,13 @@
 
 export DEVICE=$1
 shift
-export COMMAND="$*"
+export COMMANDS="$*"
 
-if [ -z "$DEVICE" ] || [ -z "$COMMAND" ]; then
+if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
 	echo "Usage: . cisco_command hostname command"
 	echo "Example: . cisco_command myrouter show runn"
-	return 1
+	echo "Multiple command example: . cisco_command myrouter show runn :: show cdp ne :: sh lldp ne"
+	return 1 2>&-
 	exit 1
 fi
 
@@ -29,11 +30,11 @@ fi
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 
-function runCommand {
+function runCommands {
 	/usr/bin/env expect -c '
 	set timeout 30
 	set DEVICE $::env(DEVICE)   
-	set COMMAND $::env(COMMAND)   
+	set COMMANDS [split $::env(COMMANDS) "::"]   
 	set USER "admin"
 	set PASS $::env(PASS)   
 	set ENABLE $::env(ENABLE)   
@@ -55,13 +56,15 @@ function runCommand {
 	expect "#" {
 		send "terminal length 0\r"
 		expect "#"
-		# This is to clean up the previous expect_out(buffer) content
-		# So that, we can get the exact output what we need.
-		expect *;         
-		send "$COMMAND\r"
-		log_user 1
-		expect -re "#$"
-	}' | grep -Pv '[^#]+#$' | grep -Pv "^$COMMAND\s*$"
+		foreach COMMAND $COMMANDS {
+			# This is to clean up the previous expect_out(buffer) content
+			# So that, we can get the exact output what we need.
+			expect *;         
+			send "$COMMAND\r"
+			log_user 1
+			expect -re "#$"
+		}
+	}' | grep -Pv '^\S+#(\r|\s|$)'
 }
 
-runCommand
+runCommands

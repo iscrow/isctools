@@ -27,7 +27,7 @@ export DEVICE=$1
 if [ -z "$DEVICE" ]; then
 	echo "Usage: . cisco_shrunn hostname"
 	echo "Example: . cisco_shrunn myrouter"
-	return 1
+	return 1 2>&-
 	exit 1
 fi
 

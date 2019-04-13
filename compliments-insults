@@ -160,7 +160,31 @@ When people ask me what I see in you, what can I tell them?
 I'd love to paint you - do you prefer varnish ot lacquer?
 I've heard alot about you - now let's hear your side of the story.
 I'd like to help you out - Which way did you come in?
-Of course I'll give you a hand - right across the mouth."
+Of course I'll give you a hand - right across the mouth.
+You have two parts of brain, 'left' and 'right'. In the left side, there's nothing right. In the right side, there's nothing left.
+You're so ugly, when your mom dropped you off at school she got a fine for littering.
+I'm jealous of all the people that haven't met you!
+If I had a face like yours, I'd sue my parents.
+I wasn't born with enough middle fingers to let you know how I feel about you.
+Don't you love nature, despite what it did to you?
+There's only one problem with your face, I can see it.
+Stupidity is not a crime so you are free to go.
+You are proof that evolution CAN go in reverse.
+If what you don't know can't hurt you, you're invulnerable.
+I'm glad to see you're not letting your education get in the way of your ignorance.
+I love what you've done with your hair. How do you get it to come out of the nostrils like that?
+Brains aren't everything. In your case they're nothing.
+If ignorance was music, you'd be an orchestra.
+You're the reason the gene pool needs a lifeguard.
+As an outsider, what do you think of the human race?
+I don't think you are stupid. You just have a bad luck when thinking.
+Oh, what? Sorry. I was trying to imagine you with a personality.
+You look like a before picture.
+Ordinarily people live and learn. You just live.
+I had prepared for a battle of wits but I see you came unarmed.
+Calling you an idiot would be an insult to all stupid people.
+You have the perfect face for radio.
+"
 
 function random() {
   if [ $(which shuf 2>/dev/null) ]; then
