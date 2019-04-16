@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+if [ ! -z "$1" ]; then
+	echo 'clipboard allows you to send text to the xwindows cliboard or get text from it.'
+	echo 'To get contents: clipboard'
+	echo 'To set contents: echo some text > clipboard'
+	exit
+fi
+
+if [ -t 0 ]; then
+	xclip -out -selection clipboard
+else
+	cat | xclip -in -selection clipboard
+fi

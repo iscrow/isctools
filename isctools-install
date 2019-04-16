@@ -15,6 +15,8 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+UPDATE="sudo git -C '$DIR' pull"
+
 shopt -s extglob #Enable glob exclusions
 
 for FILE in $(ls "$DIR"); do
@@ -22,12 +24,15 @@ for FILE in $(ls "$DIR"); do
 done
 
 echo "I am going to execute the following commands:"
+echo "$UPDATE"
 echo "$CMD"
 
 while [[ ! "$GO" =~ ^(y|n)$ ]]; do
-	echo -n "Write config? (y/n)"
+	echo -n "Update and install? (y/n): "
 	read GO
 done
 [ "$GO" != "y" ] && echo "You entered '$GO'. Exiting install..." && exit
+echo "Updating..."
+echo "$UPDATE" | bash
 echo "Installing..."
 echo "$CMD" | bash
