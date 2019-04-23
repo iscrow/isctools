@@ -9,6 +9,7 @@ GPDATA=~/.greenpages
 FRESH=""
 FIELDS=()
 SEARCH=$*
+IFS_ORIG="$IFS"
 
 function getFields {
 	read -r -a HEADER <<< $(head -n 1 "$GPDATA")
@@ -46,7 +47,13 @@ function formatEntry {
 }
 
 function search {
-	gp | grep -P -i "$SEARCH" | formatEntry
+	DATA=$(gp)
+	IFS="$IFS_ORIG"
+	#Find a match that contains all search words in any order
+	for WORD in $SEARCH; do
+		DATA=$(grep -Pi "$WORD" <<< $DATA)
+	done
+	formatEntry <<< $DATA
 }
 
 if [ ! -f "$GPDATA" ]; then
