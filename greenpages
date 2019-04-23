@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#This is a simple greenpages cli client with offline capability
+
+GPURI="http://gpapi.parkdalemills.com/cli"
+GPDATA=~/.greenpages
+
+FRESH=""
+FIELDS=""
+SEARCH=$*
+
+function getData {
+	curl -s "$GPURI" -o "$GPDATA" 2>$- && FRESH=yes
+}
+
+function gp {
+	IFS='|' read -r -a FIELDS <<< $(head -n 1 "$GPDATA")
+	tail -n +2 "$GPDATA"
+}
+
+function clearLastLine {
+	tput cuu 1 && tput el
+}
+
+function search {
+	gp | grep -P -i "$SEARCH"
+}
+
+if [ ! -f "$GPDATA" ]; then
+	echo "Downloading GreenPages Data. Please wait..."
+	getData
+	if [ ! $FRESH ]; then
+		clearLastLine
+		echo "Could not download GreenPages Data. Connect to VPN and try again."
+		exit 1
+	fi
+	clearLastLine
+fi
+search
+getData &
