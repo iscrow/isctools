@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 #This is a simple greenpages cli client with offline capability
 
+. colors.sh
+
 GPURI="http://gpapi.parkdalemills.com/cli"
 GPDATA=~/.greenpages
 
 FRESH=""
-FIELDS=""
+FIELDS=()
 SEARCH=$*
+
+function getFields {
+	read -r -a HEADER <<< $(head -n 1 "$GPDATA")
+	IFS='|' 
+	for FIELD in $HEADER; do
+		FIELDS+=($FIELD)
+	done
+	export FIELDS
+}
 
 function getData {
 	curl -s "$GPURI" -o "$GPDATA" 2>$- && FRESH=yes
 }
 
 function gp {
-	IFS='|' read -r -a FIELDS <<< $(head -n 1 "$GPDATA")
 	tail -n +2 "$GPDATA"
 }
 
@@ -21,8 +31,22 @@ function clearLastLine {
 	tput cuu 1 && tput el
 }
 
+function formatEntry {
+	local LINENUM=0
+	IFS="|"
+	while read LINE; do
+		[ "$LINENUM" -ne 0 ] && echo
+		((LINENUM++))
+		local FIELDNUM=0
+		for TEXT in $LINE; do
+			[ -z "$TEXT" ] || echo $GREEN${FIELDS[$FIELDNUM]}: $NC$TEXT
+			((FIELDNUM++))
+		done
+	done
+}
+
 function search {
-	gp | grep -P -i "$SEARCH"
+	gp | grep -P -i "$SEARCH" | formatEntry
 }
 
 if [ ! -f "$GPDATA" ]; then
@@ -35,5 +59,7 @@ if [ ! -f "$GPDATA" ]; then
 	fi
 	clearLastLine
 fi
+
+getFields
 search
 getData &
