@@ -12,7 +12,9 @@ SPINCHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
 ONLINE="🖧 "
 OFFLINE="🖧  ⚠"
 
-[ -f "$GPDATA" ] && CACHED=yes
+function checkCache {
+	[ -f "$GPDATA" ] && CACHED=yes
+}
 
 function getData {
 	curl --connect-timeout 10 -s "$GPURI" -o "$GPDATATEMP" 2>$-
@@ -81,17 +83,21 @@ function checkFresh {
 	[ $(find "$GPDATA" -newermt '-1 seconds'| wc -l) -gt 0 ] && FRESH=yes
 }
 
+
+
 FRESH=""
+CACHED=""
+checkCache
 
 if [ ! "$CACHED" ]; then
 	echo "Downloading GreenPages Data. Please wait..."
 	getData
-	if [ ! "$CACHED"  ]; then
-		clearLastLine
+	clearLastLine
+	checkCache
+	if [ ! "$CACHED" ]; then
 		echo $RED"Could not download GreenPages Data. Connect to VPN and try again."$NC
 		exit 1
 	fi
-	clearLastLine
 else
 	getData &
 	PID=$!
@@ -102,14 +108,15 @@ else
 		sleep 0.02
 	done
 	echo $NC
-	checkFresh
-	clearLastLine
-	getFields
-	search
-	if [ $FRESH ]; then
-		echo "$GREEN$ONLINE$NC"
-	else
-		echo "$RED$OFFLINE$NC"
-	fi
-	echo -n $NC
 fi
+	
+checkFresh
+clearLastLine
+getFields
+search
+if [ $FRESH ]; then
+	echo "$GREEN$ONLINE$NC"
+else
+	echo "$RED$OFFLINE$NC"
+fi
+echo -n $NC
