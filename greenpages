@@ -8,6 +8,9 @@ CONNECT_TIMEOUT=10 #Server connect timeout in seconds
 GPURI="http://gpapi.parkdalemills.com/cli"
 GPDATA=~/.greenpages
 GPDATATEMP="$(mktemp -u $GPDATA-XXXXXXXX)"
+SPINCHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+ONLINE="🖧 "
+OFFLINE="🖧  ⚠"
 
 [ -f "$GPDATA" ] && CACHED=yes
 
@@ -64,7 +67,14 @@ function search {
 	for WORD in $SEARCH; do
 		DATA=$(grep -Pi "$WORD" <<< $DATA)
 	done
-	formatEntry <<< $DATA
+	MATCHES=$(echo -n "$DATA" | grep -P '^' -c)
+	echo
+	if [ $MATCHES -gt 0 ]; then
+		formatEntry <<< $DATA
+	else
+		echo $RED"No $GREENGreenPages$RED matches found"$NC
+	fi
+	echo
 }
 
 function checkFresh {
@@ -86,10 +96,10 @@ else
 	getData &
 	PID=$!
 	I=0; while [ $I -lt $UPDATE_TIMEOUT ]; do
-		echo -n $LBLACK.
+		printf "\b\b\b\b$GREEN${SPINCHARS:a--%${#SPINCHARS}:1}   $NC"
 		kill -0 $PID 2>&- || break
 		((I++))
-		sleep 0.01
+		sleep 0.02
 	done
 	echo $NC
 	checkFresh
@@ -97,9 +107,9 @@ else
 	getFields
 	search
 	if [ $FRESH ]; then
-		echo $GREEN"... Online ..."
+		echo "$GREEN$ONLINE$NC"
 	else
-		echo $RED"... Offline ..."
+		echo "$RED$OFFLINE$NC"
 	fi
 	echo -n $NC
 fi
