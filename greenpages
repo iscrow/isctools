@@ -3,10 +3,25 @@
 
 . colors.sh
 
+UPDATE_TIMEOUT=30 #in tens of milliseconds. 20=200ms
+CONNECT_TIMEOUT=10 #Server connect timeout in seconds
 GPURI="http://gpapi.parkdalemills.com/cli"
 GPDATA=~/.greenpages
+GPDATATEMP="$(mktemp -u $GPDATA-XXXXXXXX)"
 
-FRESH=""
+[ -f "$GPDATA" ] && CACHED=yes
+
+function getData {
+	curl --connect-timeout 10 -s "$GPURI" -o "$GPDATATEMP" 2>$-
+	mv "$GPDATATEMP" "$GPDATA" 2>&- && touch "$GPDATA"
+}
+
+function finish {
+	rm "$GPDATATEMP" 2>&-
+}
+
+trap finish EXIT
+
 FIELDS=()
 SEARCH=$*
 IFS_ORIG="$IFS"
@@ -18,10 +33,6 @@ function getFields {
 		FIELDS+=($FIELD)
 	done
 	export FIELDS
-}
-
-function getData {
-	curl -s "$GPURI" -o "$GPDATA" 2>$- && FRESH=yes
 }
 
 function gp {
@@ -56,17 +67,39 @@ function search {
 	formatEntry <<< $DATA
 }
 
-if [ ! -f "$GPDATA" ]; then
+function checkFresh {
+	[ $(find "$GPDATA" -newermt '-1 seconds'| wc -l) -gt 0 ] && FRESH=yes
+}
+
+FRESH=""
+
+if [ ! "$CACHED" ]; then
 	echo "Downloading GreenPages Data. Please wait..."
 	getData
-	if [ ! $FRESH ]; then
+	if [ ! "$CACHED"  ]; then
 		clearLastLine
-		echo "Could not download GreenPages Data. Connect to VPN and try again."
+		echo $RED"Could not download GreenPages Data. Connect to VPN and try again."$NC
 		exit 1
 	fi
 	clearLastLine
+else
+	getData &
+	PID=$!
+	I=0; while [ $I -lt $UPDATE_TIMEOUT ]; do
+		echo -n $LBLACK.
+		kill -0 $PID 2>&- || break
+		((I++))
+		sleep 0.01
+	done
+	echo $NC
+	checkFresh
+	clearLastLine
+	getFields
+	search
+	if [ $FRESH ]; then
+		echo $GREEN"... Online ..."
+	else
+		echo $RED"... Offline ..."
+	fi
+	echo -n $NC
 fi
-
-getFields
-search
-getData &
