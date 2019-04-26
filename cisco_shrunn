@@ -24,13 +24,6 @@ eval set -- "$PARAMS"
 
 export DEVICE=$1
 
-if [ -z "$DEVICE" ]; then
-	echo "Usage: . cisco_shrunn hostname"
-	echo "Example: . cisco_shrunn myrouter"
-	return 1 2>&-
-	exit 1
-fi
-
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
 	
@@ -46,6 +39,13 @@ fi
 
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
+
+if [ -z "$DEVICE" ]; then
+	echo "Usage: . cisco_shrunn hostname"
+	echo "Example: . cisco_shrunn myrouter"
+	return 1 2>&-
+	exit 1
+fi
 
 SUM=$(echo -n $DEVICE | sha1sum | cut -d\  -f1)
 CACHE=$TMP/cache-$SUM.$CMD

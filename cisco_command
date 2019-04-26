@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
 
 export DEVICE=$1
-shift
+shift 2>/dev/null
 export COMMANDS="$*"
-
-if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
-	echo "Usage: . cisco_command hostname command"
-	echo "Example: . cisco_command myrouter show runn"
-	echo "Multiple command example: . cisco_command myrouter show runn :: show cdp ne :: sh lldp ne"
-	return 1 2>&-
-	exit 1
-fi
-
 
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
@@ -29,6 +20,14 @@ fi
 
 export PASS="$CISCO_SHOWRUNN_PASS"
 export ENABLE="$CISCO_SHOWRUNN_ENABLE"
+
+if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
+	echo "Usage: . cisco_command hostname command"
+	echo "Example: . cisco_command myrouter show runn"
+	echo "Multiple command example: . cisco_command myrouter show runn :: show cdp ne :: sh lldp ne"
+	return 1 2>&-
+	exit 1
+fi
 
 function runCommands {
 	/usr/bin/env expect -c '
