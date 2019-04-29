@@ -33,6 +33,7 @@ function run {
 	echo "I am going to execute the following commands:"
 	[ "$PULL" ] && echo "$UPDATE"
 	echo "$CMD"
+	GO=""
 	while [[ ! "$GO" =~ ^(y|n)$ ]]; do
 		[ "$PULL" ] && echo -n "Update and "
 		echo -n "Install? (y/n): "
