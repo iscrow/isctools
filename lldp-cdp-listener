@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+TIMEOUT=60
+
+sudo -v #Check if user has sudo permission
+if [ $? -ne 0 ]; then
+	echo You need sudo access to use lldp-cdp-listener/portid. Exiting...
+	exit 1
+fi
+
+if [ -z "$(which tcpdump)" ]; then
+	echo "You need tcpdump installed and in the path to be able to use lldp-cdp-listener/portid. Exiting..."
+	exit 1
+fi
+
+if [ -z "$(which ethtool)" ]; then
+	echo "You need ethtool installed and in the path to be able to use lldp-cdp-listener/portid. Exiting..."
+	exit 1
+fi
+
+function getInterfaces {
+	INTERFACES=$(ip -br addr show | cut -d\  -f1  | grep -v '^lo$')
+}
+
+contains() {
+	[[ " $(echo $list) " =~ " $x " ]] && exit 0 || exit 1
+}
+
+INTERFACES="$(ip -br addr show | cut -d\  -f1 | grep -v lo)"
+INTERFACE="$1"
+
+if ! echo $INTERFACE | grep -iqF "$INTERFACES"; then
+	select INTERFACE in $INTERFACES ALL; do
+		[ "$INTERFACE" == "ALL" ] && INTERFACE="$INTERFACES"
+		break
+	done
+fi
+
+
+LOG="$2"
+
+shift 2
+
+function getName {
+	grep -P 'System Name|Device-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
+}
+
+function getPort {
+	grep -P 'Port Description|Port-ID' | sed -E -e 's/.*: //g' -e "s/'//g"
+}
+
+function getIP {
+	grep -P 'Management Address length|Address \(' | sed -E -e 's/.* //g' -e "s/'//g"
+}
+
+function getLink {
+	ethtool $1 2>/dev/null | grep -Pi 'Link detected: (yes|no)' | sed -E 's/.*Link detected: (yes|no)/\1/gi'
+}
+
+function getData {
+	local INTERFACE=$1
+	local PREFIX="$INTERFACE ->"
+	LINK=$(getLink $INTERFACE)
+	if [ "$LINK" == "no" ]; then
+		echo "$PREFIX NO LINK"
+		exit 1
+	fi
+	local FILTER='not proto UDP and (ether[12:2]=0x88cc or ether[20:2]=0x2000)'
+	DATA=$(sudo timeout $TIMEOUT tcpdump -i $INTERFACE -s 1500 -nn -v -c 1 "$FILTER" 2> /dev/null)
+	[ $? -ne 0 ] && echo "$PREFIX TIMEOUT($TIMEOUT sec)" && exit 1
+	NAME=$(getName <<< $DATA)
+	PORT=$(getPort <<< $DATA)
+	IP=$(getIP <<< $DATA)
+	echo "$PREFIX IP: $IP,   Name: $NAME,   Port: $PORT"
+	echo "$DATA" | grep -v ' LLDP, length ' | grep -P --color '\t   *[^:]+$|: .*$|$'
+	echo
+}
+
+for I in $INTERFACE; do
+	getData $I &
+done
+
+wait
+
+
