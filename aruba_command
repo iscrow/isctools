@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+
+DEVICE=$1
+ARUBA_COMMAND_USER_LAST=$ARUBA_COMMAND_USER
+
+[[ "$DEVICE" =~ @ ]] && IFS=@ read ARUBA_COMMAND_USER_LAST DEVICE <<< $DEVICE
+
+ARUBA_COMMAND_USER=${ARUBA_COMMAND_USER:-$ARUBA_COMMAND_USER_LAST}
+export DEVICE
+
+shift 2>/dev/null
+export COMMANDS="$*"
+
+if [ -z "$ARUBA_COMMAND_PASS" ] || [ -z $ARUBA_COMMAND_USER ] ; then
+	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
+	
+	if [ -z $ARUBA_COMMAND_USER ] && [ -z $ARUBA_COMMAND_USER_LAST ]; then
+		>&2 echo -n 'Username: '
+		read ARUBA_COMMAND_USER
+		ARUBA_COMMAND_USER_LAST=$ARUBA_COMMAND_USER
+	fi
+	
+	>&2 echo -n 'Password: '
+	read -s ARUBA_COMMAND_PASS
+	>&2 echo
+	>&2 echo
+fi
+
+export ARUBA_COMMAND_USER
+export ARUBA_COMMAND_USER_LAST
+export ARUBA_COMMAND_PASS
+
+if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
+	echo "Usage: . aruba_command hostname command"
+	echo "Example: . aruba_command myswitch show runn"
+	echo "Multiple command example: . aruba_command myswitch show runn :: show version :: sh lldp i r"
+	return 1 2>&-
+	exit 1
+fi
+
+# This is a nasty nasty hack. Without it I get echo of the 1st command.
+# Adding this prepends an empty command that just sends an ENTER to the
+# SSH session. Can't figure out how to fix this correctly. WTF!!!
+COMMANDS="::$COMMANDS"
+
+function runCommands {
+	/usr/bin/env expect -c '
+	set timeout 30
+	set DEVICE $::env(DEVICE)   
+	set COMMANDS [split $::env(COMMANDS) "::"]   
+	set USER $::env(ARUBA_COMMAND_USER_LAST)   
+	set PASS $::env(ARUBA_COMMAND_PASS)
+	set PROMPT ".# .*$"	
+	
+	log_user 0
+
+	spawn -noecho ssh $USER@$DEVICE
+  expect {
+		"yes/no" {
+			send "yes\r"
+			exp_continue
+		}
+		"password:" {
+			send "$PASS\r"
+		}
+	}
+	expect {
+		"Press any key to continue" {
+			send "\r"
+			send "\r"
+		}
+	  "password:" {
+			send_user "Wrong credentials. Exiting\n\n"
+			exit 1
+		}
+	}
+	expect -re $PROMPT {
+		send "terminal length 512\r"
+		expect -re $PROMPT
+		send "terminal length 1000\r"
+		expect -re $PROMPT
+		log_user 0
+		foreach COMMAND $COMMANDS {
+			# This is to clean up the previous expect_out(buffer) content
+			# So that, we can get the exact output what we need.
+			expect *         
+			send "[string trim $COMMAND]\r"
+			log_user 1
+			expect -re $PROMPT
+			log_user 0
+		}
+		send "exit\r"
+		expect ">"
+		send "exit\r"
+		expect "(y/n)?"
+		send "y\r"
+	}' | tr -cd "[:print:]\n" | grep -Pv '^\S+#(\r|\s+|$)'
+}
+
+runCommands
