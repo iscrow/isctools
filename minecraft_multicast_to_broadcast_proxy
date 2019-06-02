@@ -13,5 +13,4 @@ fi
 MCAST_IF=$(ip route show to match $MCAST_ADDR | cut -d' ' -f5)
 
 sudo timeout -k1 59 socat UDP4-RECV:$MCAST_PORT,bind=$MCAST_ADDR,ip-add-membership=$MCAST_ADDR:$MCAST_IF,reuseaddr UDP4-SENDTO:$BCAST_ADDR:$MCAST_PORT,broadcast
-
-
+exit 0
