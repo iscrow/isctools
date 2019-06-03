@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 MCAST_ADDR=224.0.2.60
 MCAST_PORT=4445
-
 BCAST_ADDR="$1"
+MCAST_IF=$(ip route show to match $MCAST_ADDR | cut -d' ' -f5)
+ME=$(basename $0)
+
 if [[ ! "$BCAST_ADDR" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
- echo Please specify a valid broadcast address as a parameter.
- echo $0 192.168.3.255
- echo $0 255.255.255.255
- exit 1
+	echo "$ME will continue to proxy traffic for 1 minute. It is mean to be ran every minute as a cron job."
+	echo "Usage:"
+	echo "$ME <broadcast IP>"
+	echo "$ME 192.168.3.255"
+	echo "$ME 255.255.255.255"
+	exit 1
 fi
 
-MCAST_IF=$(ip route show to match $MCAST_ADDR | cut -d' ' -f5)
-
 sudo timeout -k1 59 socat UDP4-RECV:$MCAST_PORT,bind=$MCAST_ADDR,ip-add-membership=$MCAST_ADDR:$MCAST_IF,reuseaddr UDP4-SENDTO:$BCAST_ADDR:$MCAST_PORT,broadcast
+
 exit 0
