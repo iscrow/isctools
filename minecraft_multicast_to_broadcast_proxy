@@ -3,7 +3,7 @@ MCAST_ADDR=224.0.2.60
 MCAST_PORT=4445
 BCAST_ADDR="$1"
 MCAST_IF=$(ip route show to match $MCAST_ADDR | cut -d' ' -f5)
-LAN_ADDR=$(ip -f inet -o addr show $MCAST_IF|cut -d\  -f 7 | cut -d/ -f 1)
+LAN_ADDR=$(ip -f inet -o addr show $MCAST_IF| cut -d\  -f 7 | cut -d/ -f 1)
 ME=$(basename $0)
 
 if [[ ! "$BCAST_ADDR" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]]; then
