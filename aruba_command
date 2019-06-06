@@ -18,7 +18,7 @@ else
 fi
 
 if [ -z "$ARUBA_COMMAND_PASS" ] || [ -z $ARUBA_COMMAND_USER ] ; then
-	if [ ! -t 1 ] ; then
+	if [ ! -t 1 ] || [ ! -t 0 ]; then
 		# stdout isn't a terminal
 		echo "There are no cached credentials. Please run '. aruba_command' alone to cache them."
 		return 2>&-
@@ -93,7 +93,7 @@ function runCommands {
 		foreach COMMAND $COMMANDS {
 			# This is to clean up the previous expect_out(buffer) content
 			# So that, we can get the exact output what we need.
-			expect *         
+			expect *
 			send "[string trim $COMMAND]\r"
 			log_user 1
 			expect -re $PROMPT
