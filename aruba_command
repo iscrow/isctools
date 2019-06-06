@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 DEVICE=$1
 ARUBA_COMMAND_USER_LAST=$ARUBA_COMMAND_USER
 
@@ -15,7 +14,7 @@ if [ -t 0 ]; then
 	export COMMANDS="$*"
 else
 	# STDIN is a pipe
-	export COMMANDS="$(cat | awk '{if(NR == 1) {printf $0} else {printf "::"$0}}')"
+	export COMMANDS="$(cat)"
 fi
 
 if [ -z "$ARUBA_COMMAND_PASS" ] || [ -z $ARUBA_COMMAND_USER ] ; then
@@ -52,16 +51,13 @@ if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
 	exit 1
 fi
 
-# This is a nasty nasty hack. Without it I get echo of the 1st command.
-# Adding this prepends an empty command that just sends an ENTER to the
-# SSH session. Can't figure out how to fix this correctly. WTF!!!
-COMMANDS="::$COMMANDS"
+COMMANDS=$'\n'"$(sed -E 's/::/\n/g' <<< $COMMANDS)"
 
 function runCommands {
 	/usr/bin/env expect -c '
 	set timeout 30
 	set DEVICE $::env(DEVICE)   
-	set COMMANDS [split $::env(COMMANDS) "::"]   
+	set COMMANDS [split $::env(COMMANDS) "\n"]   
 	set USER $::env(ARUBA_COMMAND_USER_LAST)   
 	set PASS $::env(ARUBA_COMMAND_PASS)
 	set PROMPT ".# .*$"	

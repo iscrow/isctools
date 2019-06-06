@@ -7,7 +7,7 @@ if [ -t 0 ]; then
 	export COMMANDS="$*"
 else
 	# STDIN is a pipe
-	export COMMANDS="$(cat | awk '{if(NR == 1) {printf $0} else {printf "::"$0}}')"
+	export COMMANDS="$(cat)"
 fi
 
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
@@ -42,11 +42,13 @@ if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
 	exit 1
 fi
 
+COMMANDS="$(sed -E 's/::/\n/g' <<< $COMMANDS)"
+
 function runCommands {
 	/usr/bin/env expect -c '
 	set timeout 30
 	set DEVICE $::env(DEVICE)   
-	set COMMANDS [split $::env(COMMANDS) "::"]   
+	set COMMANDS [split $::env(COMMANDS) "\n"]   
 	set USER "admin"
 	set PASS $::env(PASS)   
 	set ENABLE $::env(ENABLE)   
@@ -75,6 +77,7 @@ function runCommands {
 			send "[string trim $COMMAND]\r"
 			log_user 1
 			expect -re "#$"
+			log_user 0
 		}
 	}' | grep -Pv '^\S+#(\r|\s|$)'
 }
