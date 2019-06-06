@@ -7,7 +7,7 @@ if [ -t 0 ]; then
 	export COMMANDS="$*"
 else
 	# STDIN is a pipe
-	export COMMANDS="$(cat | paste -sd '::' -)"
+	export COMMANDS="$(cat | awk '{if(NR == 1) {printf $0} else {printf "::"$0}}')"
 fi
 
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
