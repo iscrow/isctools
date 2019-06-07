@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+
+ACL_SRC_IP="10.15.2.30"
+ACL_DST_IP="10.21.2.30"
+
+TFTP_SERVER="netview"
+PCAP_FILE="capture.pcap"
+
+INTERFACE="GigabitEthernet 0/0.1" 
+
+TEMPLATE_ACL="
+permit ip host $ACL_SRC_IP host $ACL_DST_IP
+permit ip host $ACL_DST_IP host $ACL_SRC_IP"
+
+TEMPLATE_START="
+monitor capture buffer PACKET_CAP size 2048 max-size 4000 circular
+conf t
+ip access-list ex PACKET_CAP_FILTER
+$TEMPLATE_ACL
+end
+monitor capture buffer PACKET_CAP filter access-list PACKET_CAP_FILTER
+monitor capture point ip cef CAP $INTERFACE both
+monitor capture point associate CAP PACKET_CAP
+monitor capture point start CAP"
+
+
+TEMPLATE_STOP="
+monitor capture point stop CAP
+monitor capture buffer PACKET_CAP export tftp://$TFTP_SERVER/$PCAP_FILE
+monitor capture point stop CAP
+no monitor capture point ip cef CAP $INTERFACE both
+no monitor capture buffer PACKET_CAP
+conf t
+no ip access-list ex PACKET_CAP_FILTER
+end"
+
+TFTP_GET_COMMAND="get $PCAP_FILE /tmp/$PCAP_FILE
+quit"
+
+echo "$TEMPLATE_STOP" | . cisco_command 10.100.0.1
+
+tftp $TFTP_SERVER <<< $TFTP_GET_COMMAND
+wireshark /tmp/$PCAP_FILE
+
+
+exit
