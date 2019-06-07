@@ -1,21 +1,94 @@
 #!/usr/bin/env bash
 
-
-ACL_SRC_IP="10.15.2.30"
-ACL_DST_IP="10.21.2.30"
-
-TFTP_SERVER="netview"
+TFTP_SERVER="10.10.100.227"
 PCAP_FILE="capture.pcap"
 
-INTERFACE="GigabitEthernet 0/0.1" 
+CISCO_ROUTER="$1"
+
+DIRTY=""
+
+source colors.sh
+
+function ip_validate {
+	[[ "$1" =~ ^(([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))\.){3}([1-9]?[0-9]|1[0-9][0-9]|2([0-4][0-9]|5[0-5]))$ ]] || exit 1
+	echo "$1"
+}
+
+ACL_SRC_IP=0.0.0.0
+ACL_SRC_WILDCARD=255.255.255.255
+ACL_DST_IP=0.0.0.0
+ACL_DST_WILDCARD=255.255.255.255
+
+while [ -z "$CISCO_ROUTER" ]; do
+	echo -n "Enter hostname/IP of the cisco router: "
+	read CISCO_ROUTER
+done
+
+while [ -z "$(ip_validate $ACL_SRC_IP)" ]; do
+	echo -n "Enter source IP address: "
+	read ACL_SRC_IP
+done
+
+while [ -z "$(ip_validate $ACL_SRC_WILDCARD)" ]; do
+	echo -n "Enter source WILDCARD [default 0.0.0.0 - single host]: "
+	read ACL_SRC_WILDCARD
+	[ -z "$ACL_SRC_WILDCARD" ] && ACL_SRC_WILDCARD="0.0.0.0"
+done
+
+while [ -z "$(ip_validate $ACL_DST_IP)" ]; do
+	echo -n "Enter destination IP address: "
+	read ACL_DST_IP
+done
+
+while [ -z "$(ip_validate $ACL_DST_WILDCARD)" ]; do
+	echo -n "Enter destination WILDCARD [default 0.0.0.0 - single host]': "
+	read ACL_DST_WILDCARD
+	[ -z "$ACL_DST_WILDCARD" ] && ACL_DST_WILDCARD="0.0.0.0"
+done
+
+if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
+	if [ ! -t 1 ] || [ ! -t 0 ]; then
+		# stdout isn't a terminal
+		echo "There are no cached credentials. Please run '. cisco_command' alone to cache them."
+		return 2>&-
+		exit 1
+	fi
+	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
+	>&2 echo -n 'Password: '
+	read -s CISCO_SHOWRUNN_PASS
+	export CISCO_SHOWRUNN_PASS
+	>&2 echo
+	>&2 echo -n 'Enable: '
+	read -s CISCO_SHOWRUNN_ENABLE
+	export CISCO_SHOWRUNN_ENABLE
+	>&2 echo
+	>&2 echo
+fi
+
+export PASS="$CISCO_SHOWRUNN_PASS"
+export ENABLE="$CISCO_SHOWRUNN_ENABLE"
+
+
+INT_COMMAND="show ip interface brief"
+INTERFACE_LIST="$(. cisco_command $CISCO_ROUTER $INT_COMMAND | grep -Pv """$INT_COMMAND|NVI0|Embedded-Service-Engine""")"
+INTERFACES=$(echo "$INTERFACE_LIST" | grep -Pv 'IP-Address' | awk '{print $1}')
+
+echo "$INTERFACE_LIST"
+echo
+echo "Select capture interface: "
+
+select INTERFACE in $INTERFACES; do
+	[ -n "$INTERFACE" ] && break
+done
 
 TEMPLATE_ACL="
-permit ip host $ACL_SRC_IP host $ACL_DST_IP
-permit ip host $ACL_DST_IP host $ACL_SRC_IP"
+permit ip $ACL_SRC_IP $ACL_SRC_WILDCARD $ACL_DST_IP $ACL_DST_WILDCARD
+permit ip $ACL_DST_IP $ACL_DST_WILDCARD $ACL_SRC_IP $ACL_SRC_WILDCARD"
 
 TEMPLATE_START="
 monitor capture buffer PACKET_CAP size 2048 max-size 4000 circular
 conf t
+no ip access-list ex PACKET_CAP_FILTER
 ip access-list ex PACKET_CAP_FILTER
 $TEMPLATE_ACL
 end
@@ -24,24 +97,90 @@ monitor capture point ip cef CAP $INTERFACE both
 monitor capture point associate CAP PACKET_CAP
 monitor capture point start CAP"
 
+TEMPLATE_STATUS="show monitor capture buffer all parameters"
+#"show monitor capture buffer PACKET_CAP"
 
 TEMPLATE_STOP="
 monitor capture point stop CAP
-monitor capture buffer PACKET_CAP export tftp://$TFTP_SERVER/$PCAP_FILE
-monitor capture point stop CAP
 no monitor capture point ip cef CAP $INTERFACE both
-no monitor capture buffer PACKET_CAP
 conf t
 no ip access-list ex PACKET_CAP_FILTER
 end"
 
+TEMPLATE_REMOVE_BUFFER="no monitor capture buffer PACKET_CAP"
+
+TEMPLATE_TRANSFER="
+monitor capture buffer PACKET_CAP export tftp://$TFTP_SERVER/$PCAP_FILE
+$TEMPLATE_REMOVE_BUFFER
+"
+
+TEMPLATE_EMERGENCY_STOP="
+$TEMPLATE_STOP
+$TEMPLATE_REMOVE_BUFFER
+"
+
 TFTP_GET_COMMAND="get $PCAP_FILE /tmp/$PCAP_FILE
 quit"
 
-echo "$TEMPLATE_STOP" | . cisco_command 10.100.0.1
+function startCapture {
+	echo "${GREEN}Starting Capture${NC}"
+	echo "$TEMPLATE_START" | . cisco_command "$CISCO_ROUTER"
+}
 
-tftp $TFTP_SERVER <<< $TFTP_GET_COMMAND
-wireshark /tmp/$PCAP_FILE
+function statusWait {
+	while ! read -t 1; do
+		echo "$TEMPLATE_STATUS" | . cisco_command "$CISCO_ROUTER"
+		echo "${GREEN}Capturing. Press ENTER to stop.${NC}"
+		sleep 1
+	done
+}
+
+function stopCapture {
+	echo "${RED}Stopping capture${NC}"
+	echo "$TEMPLATE_STOP" | . cisco_command "$CISCO_ROUTER"
+	echo "${GREEN}Transferring capture file $PCAP_FILE to tftp server $TFTP_SERVER${NC}"
+	echo "$TEMPLATE_TRANSFER" | . cisco_command "$CISCO_ROUTER"
+}
+
+function getFile {
+	echo "${GREEN}Transferring capture file $PCAP_FILE from tftp server to local machine${NC}"
+	tftp $TFTP_SERVER <<< $TFTP_GET_COMMAND
+}
+
+function openWireshark {
+	wireshark /tmp/$PCAP_FILE &
+}
+
+function emergencyStop {
+	if [ -n "$DIRTY" ]; then
+		echo "${RED}Attempting Emergency cleanup in the backgroud.${NC}"
+	 	echo "$TEMPLATE_EMERGENCY_STOP" | . cisco_command "$CISCO_ROUTER"
+		echo "${GREEN}Completed. Check output in blue for problems during cleanup.${NC}"
+	fi
+}
+
+function exitTrap {
+	emergencyStop &
+}
 
 
-exit
+# Let the EXIT trap know that we will need to clean up the router
+DIRTY=true
+
+trap exitTrap EXIT
+
+# Start the capture
+startCapture
+
+# Show capture status repetitively and offering to stop
+statusWait
+
+# Stop the capture and send the file to the tftp server
+stopCapture
+
+# Let the EXIT trap know that we've already cleaned up
+DIRTY=""
+
+getFile
+openWireshark
+echo "${GREEN}Capture completed{NC}"
