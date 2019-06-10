@@ -9,6 +9,8 @@ starttmux() {
     echo    "Usage examples:"
     echo    ""
     echo    "tmuxer 8                                   # Opens 8 panes with var= 1..8"
+    echo    "echo 8 | tmuxer                            # Opens 8 panes with var= 1..8"
+		echo    "tmuxer < /tmp/host_list                    # Opens panes for targets in /tmp/host_list file"
     echo    "tmuxer Alice Bob Carol Dan                 # Opens 4 panes with var= Alice, Bob, Carol and Dan"
     echo    "tmuxer 192.168.0. + 11 12 15               # Opens 3 panes with var= 192.168.0.11, 192.168.0.12 and 192.168.0.15"
     echo    "You can also preload the parameters in environemnt variable TMUXER like this:"
@@ -71,5 +73,6 @@ starttmux() {
 
 #Use the PARAMS variable or command line parameters
 PARAMS=${TMUXER:=$*}
+[ -z "$PARAMS" ] && [ ! -t 0 ] && PARAMS=$(cat)
 
 starttmux

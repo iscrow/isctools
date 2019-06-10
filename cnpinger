@@ -35,12 +35,16 @@ case $key in
 esac
 done
 
-if [ "$YSCALE" -le 0 ]; then
+if [ $(echo "$YSCALE <= 0" | bc) -eq 1 ]; then
   #If YSCALE is 0, or a negative number then set it to auto
 	YSCALE=""
 fi
 
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+TARGETS="$*"
+
+[ -z "$TARGETS" ] && [ ! -t 0 ] && TARGETS=$(cat)
 
 CNPING="cnping"
 BASE=""
@@ -51,17 +55,19 @@ if [ "$2" == "+" ]; then
 	shift #Shift past + sign
 fi
 
-if [ -z "$*" ]; then
+if [ -z "$TARGETS" ]; then
 	echo "Usage: cnpinger [-i|--interval 0.02] [-s|--size 0] [-y|--yscale 1 (use 0 for auto)] hosts"
 	echo "Examples:"
 	echo "cnpinger -i 0.01 192.168.1.1"
 	echo "cnpinger 192.168.1.1 192.168.1.2"
 	echo "cnpinger 192.168.1. + 1,9-11,15  #Equivalent to cnpinger 192.168.1.1  192.168.1.9 192.168.1.10 192.168.1.11 192.168.1.15" 
 	echo "cnpinger computer + 1-20  #Equivalent to cnpinger computer1 computer2 ... computer20"
+	echo "cnpinger -i 0.5 < /tmp/host_list #Starts pings every 0.5sec for hosts in file /tmp/host_list"
+	echo "echo computer + 1-3 | cnpinger -i 0.1 #Starts pinges every 0.1sec for computer1 computer2 computer3"
 	exit
 fi
 
-expset=$(echo $* | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
+expset=$(echo $TARGETS | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
 expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
 set -- "$expset"
 
@@ -80,5 +86,6 @@ fi
 for var in $*; do
 	COMMAND="$CNPING $BASE$var $CNARGS"
 	$DEBUG $COMMAND 2>&1 | grep -v -e 'Event:' &
+	sleep 0.01 #Needed so the window manager opens instances in the correct order
 done
 
