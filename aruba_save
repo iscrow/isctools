@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+TFTP_SERVER=10.10.100.227
+
+SWITCH=$1
+
+source colors.sh
+
+if [ -z "$SWITCH" ]; then
+	echo "Usage:"
+	echo "aruba_save switch_ip"
+	echo "aruba_save 192.168.3.12"
+	return 1 2>&- || exit
+fi
+
+. aruba_auth
+
+SW_HOSTNAME=$(. aruba_command $SWITCH 'sh runn | inc hostname' | grep hostname | sed -E 's/hostname "([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+
+if [ -z "$SW_HOSTNAME" ]; then
+	echo "${RED}Could not determine hostname for $SWITCH. Exiting.${NC}"
+	return 1 2>&- || exit
+fi
+
+echo "$SWITCH hostname is ${GREEN}$SW_HOSTNAME${NC}"
+echo
+echo "Sending commands:${GREEN}"
+echo "	write memory"
+echo "	copy runn tftp $TFTP_SERVER $SW_HOSTNAME${NC}"
+
+aruba_command $SWITCH "write memory :: copy runn tftp $TFTP_SERVER $SW_HOSTNAME"
+
+echo

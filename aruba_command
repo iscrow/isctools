@@ -60,11 +60,11 @@ function runCommands {
 	set COMMANDS [split $::env(COMMANDS) "\n"]   
 	set USER $::env(ARUBA_COMMAND_USER_LAST)   
 	set PASS $::env(ARUBA_COMMAND_PASS)
-	set PROMPT ".# .*$"	
+	set PROMPT "^.+# .*$"	
 	
 	log_user 0
 
-	spawn -noecho ssh $USER@$DEVICE
+	spawn ssh $USER@$DEVICE
   expect {
 		"yes/no" {
 			send "yes\r"
@@ -104,7 +104,11 @@ function runCommands {
 		send "exit\r"
 		expect "(y/n)?"
 		send "y\r"
-	}' | tr -cd "[:print:]\n" | grep -Pv '^\S+#(\r|\s+|$)'
+	}' | tr -cd "[:print:]\n" \
+		| sed -E -e 's/\[2K/\n/g' -e 's/\[([0-9]+;[0-9]+\w|\?[0-9]+h|[0-9][A-Z])//g' \
+		| grep -Pv '^\S+#(\r|\s+|$)'
+	# tr ...   - remove non-printable characters from output
+	# sed ...  - convert [2K to \n and remove escape character remnants from output
+	# grep ... - remove the prompt from output
 }
-
 runCommands
