@@ -73,6 +73,6 @@ starttmux() {
 
 #Use the PARAMS variable or command line parameters
 PARAMS=${TMUXER:=$*}
-[ -z "$PARAMS" ] && [ ! -t 0 ] && PARAMS=$(cat)
+[ -z "$PARAMS" ] && [ ! -t 0 ] && PARAMS=$(cat | tr '\n' ' ' | tr '\r' ' ')
 
 starttmux

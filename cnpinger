@@ -44,7 +44,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 TARGETS="$*"
 
-[ -z "$TARGETS" ] && [ ! -t 0 ] && TARGETS=$(cat)
+[ -z "$TARGETS" ] && [ ! -t 0 ] && TARGETS=$(cat | tr '\n' ' ' | tr '\r' ' ')
 
 CNPING="cnping"
 BASE=""
