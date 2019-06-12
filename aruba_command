@@ -13,8 +13,8 @@ if [ -t 0 ]; then
 	# STDIN not a pipe
 	export COMMANDS="$*"
 else
-	# STDIN is a pipe
-	export COMMANDS="$(cat)"
+	# STDIN may be a pipe
+	export COMMANDS="${*:-$(cat)}"
 fi
 
 if [ -z "$ARUBA_COMMAND_PASS" ] || [ -z $ARUBA_COMMAND_USER ] ; then
