@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ ! -z "$1" ]; then
+if [ "$#" -eq 1 ] && [ "$1" == "--help" ]; then
 	echo 'clipboard allows you to send text to the xwindows cliboard or get text from it.'
 	echo 'To get contents: clipboard'
 	echo 'To set contents: echo some text > clipboard'
@@ -8,7 +8,11 @@ if [ ! -z "$1" ]; then
 fi
 
 if [ -t 0 ]; then
-	xclip -out -selection clipboard
+	if [ "$#" -eq 0 ]; then
+		xclip -out -selection clipboard
+	else
+		xclip -in -selection clipboard <<< "$*"
+	fi
 else
-	cat | xclip -in -selection clipboard
+	xclip -in -selection clipboard <&0
 fi
