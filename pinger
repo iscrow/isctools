@@ -32,6 +32,16 @@ host="$1"
 ip=""
 printhost=""
 
+function isleep() {
+	local DELAY="$1"
+	if command -v usleep >&- ; then
+		usleep $DELAY
+	else
+		DELAY=$(echo "scale=6; $DELAY/1000000 | bc -l")
+		sleep $DELAY
+	fi
+}
+
 function valid_ip() {
   local  ip=$1
   local  stat=1
@@ -161,5 +171,5 @@ while true; do
   #[ $currcount -eq 1 ] || [ $errorcount -ne 0 ] && sleep 1 #Sleep only if we got a response. If we didn't we would have waited 1 second waiting for it already.
   end=$(date +%s%N | cut -b1-13)
   timeleft=$(( 1000000 - ($end-$start)*1000 ))
-  [ $timeleft -gt 0 ] && usleep $timeleft #Sleep only if we got a response. If we didn't we would have waited 1 second waiting for it already.
+  [ $timeleft -gt 0 ] && isleep $timeleft #Sleep only if we got a response. If we didn't we would have waited 1 second waiting for it already.
 done
