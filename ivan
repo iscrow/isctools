@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+urlencode() {
+    # urlencode <string>
+    old_lc_collate=$LC_COLLATE
+    LC_COLLATE=C
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf "$c" ;;
+            *) printf '%%%02X' "'$c" ;;
+        esac
+    done
+    LC_COLLATE=$old_lc_collate
+}
+
+NAME="$(tr '[:lower:]' '[:upper:]' <<< ${USER:0:1})${USER:1}"
+echo "Ivan Emulator v0.00.01 (2019)"
+read -p "Hey $NAME how can I help?: " QUERY
+
+QUERY=$(urlencode "$QUERY")
+URL="https://lmgtfy.com/?q=$QUERY"
+
+echo
+
+if xdg-open "$URL" &>/dev/null; then
+	echo "$NAME You're doing this completely wrong"
+else
+	echo "$NAME You're doing this completely wrong but if you insist go here: $URL"
+fi
