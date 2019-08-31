@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+if [ -z "$1" ] || [ -z "$2" ]; then
+	echo 'Usage: androidAppTracker <app_store_url> <threshold_price>'
+	echo 'Example: androidAppTracker "https://play.google.com/store/apps/details?id=com.simulationcurriculum.skysafari6pro" 40'
+	exit 1
+fi
+
+URL=$1
+THRESHOLD=$2
+PAGE=$(curl -s "$URL")
+
+NAME=$(echo "$PAGE" | grep 'itemprop="name"><span >' | sed -E 's|.*itemprop="name"><span >([^<]+)</span>.*|\1|g')
+PRICE=$(echo "$PAGE" | grep -P '\["\$[0-9]+\.[0-9]+ Buy"\]' | sed -E 's/.*\["\$([0-9]+\.[0-9]+) Buy"\].*/\1/g')
+
+[[ ! "$PRICE" =~ ^[0-9.]+$ ]] && echo 'Could not get price' && exit 1
+
+echo $NAME Price: $PRICE
+if (( $(echo "$THRESHOLD > $PRICE" |bc -l) )); then
+	pushover.sh -t "$NAME is \$${PRICE}"  -a "$NAME in app store" -u "$URL" "$NAME price dropped below $THRESHOLD to $PRICE"
+	echo $NAME dropped below $THRESHOLD to $PRICE
+fi
