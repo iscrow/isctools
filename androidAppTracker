@@ -17,6 +17,7 @@ PRICE=$(echo "$PAGE" | grep -P '\["\$[0-9]+\.[0-9]+ Buy"\]' | sed -E 's/.*\["\$(
 
 echo $NAME Price: $PRICE
 if (( $(echo "$THRESHOLD > $PRICE" |bc -l) )); then
-	pushover.sh -t "$NAME is \$${PRICE}"  -a "$NAME in app store" -u "$URL" "$NAME price dropped below $THRESHOLD to $PRICE"
-	echo $NAME dropped below $THRESHOLD to $PRICE
+	PRICE="\\\$$PRICE"
+	THRESHOLD="\\\$$THRESHOLD"
+	pushover.sh -t "$NAME is $PRICE"  -a "$NAME in app store" -u "$URL" "$NAME price dropped below $THRESHOLD to $PRICE"
 fi
