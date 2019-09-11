@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#Inspired by and improvement of https://fam.tuwien.ac.at/~schamane/_/mycolorize
+. colors.sh
+
+BELL=$(tput bel) 
+
+# compile all rules given at command line to 1 set of rules for SED
+while [ "/$1/" != '//' ] ; do
+  # reset variables
+  COLOR=''; REGEX=''; BEEP=''
+  # assign parameters from command line to variables and shift the rest
+  COLOR=${1^^} ; REGEX="$2" ; shift 2
+  # if a beep is requested in the optional 3rd parameter set $beep
+  
+	[ "/$1/" != '//' ] && [[ ( "$1" = 'bell' || "$1" = 'beep' ) ]] \
+	    && BEEP=$BELL && shift
+
+	# check if the incoming regex contains unescaped parenthesis.
+	PARENS=$(grep -Pc '[^\\](\)|\))' <<< $REGEX)
+
+  # if so match the whole thing but only colorize the match in parenthesis.	
+	if [ "$PARENS" -ne 0 ]; then
+		META_REGEX=$(sed -E 's|^|(|;s|([^\])\)|\1)(|;s|([^\])\(|\1)(|;s|$|)|' <<< $REGEX)
+		RULE=";s/${META_REGEX}/\1${BEEP}${!COLOR}\2${NC}\3/g"
+	else
+		RULE=";s/($REGEX)/${BEEP}${!COLOR}\1${NC}/g"
+	fi
+
+  SEDRULES="${SEDRULES}${RULE}"
+done
+
+# call sed with the compiled sedrules to colorize the text
+sed -E "$SEDRULES"
