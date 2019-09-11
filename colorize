@@ -4,10 +4,10 @@
 
 if [ -t 0 ]; then
 	echo "Usage:"
-	echo "  echo text | colorize color pattern [beep|bell] [color pattern [beep|bell] ... color pattern[beep|bell]]"
-	echo "  cat /proc/cpuinfo | colorize green 'model name\s+: (.*)' blue Intel red AMD purple '([^ ]+)GHz'"
-	echo "  As an optional 3rd parameter you can add beep or bell to be alerted on match"
-	echo "  echo 'this is an emergency' | colorize red emergency beep"
+	echo "	echo text | colorize color pattern [beep|bell] [color pattern [beep|bell] ... color pattern[beep|bell]]"
+	echo "	cat /proc/cpuinfo | colorize green 'model name\s+: (.*)' blue Intel red AMD purple '([^ ]+)GHz'"
+	echo "	As an optional 3rd parameter you can add beep or bell to be alerted on match"
+	echo "	echo 'this is an emergency' | colorize red emergency beep"
 	exit
 fi
 
@@ -15,27 +15,27 @@ BELL=$(tput bel)
 
 # compile all rules given at command line to 1 set of rules for SED
 while [ "/$1/" != '//' ] ; do
-  # reset variables
-  COLOR=''; REGEX=''; BEEP=''
-  # assign parameters from command line to variables and shift the rest
-  COLOR=${1^^} ; REGEX="$2" ; shift 2
-  # if a beep is requested in the optional 3rd parameter set $beep
-  
+	# reset variables
+	COLOR=''; REGEX=''; BEEP=''
+	# assign parameters from command line to variables and shift the rest
+	COLOR=${1^^} ; REGEX="$2" ; shift 2
+	# if a beep is requested in the optional 3rd parameter set $beep
+	
 	[ "/$1/" != '//' ] && [[ ( "$1" = 'bell' || "$1" = 'beep' ) ]] \
-	    && BEEP=$BELL && shift
+		 && BEEP=$BELL && shift
 
 	# check if the incoming regex contains unescaped parenthesis.
 	PARENS=$(grep -Pc '[^\\](\)|\))' <<< $REGEX)
 
-  # if so match the whole thing but only colorize the match in parenthesis.	
+	# if so match the whole thing but only colorize the match in parenthesis.	
 	if [ "$PARENS" -ne 0 ]; then
-		META_REGEX=$(sed -E 's|^|(|;s|([^\])\)|\1)(|;s|([^\])\(|\1)(|;s|$|)|' <<< $REGEX)
-		RULE=";s/${META_REGEX}/\1${BEEP}${!COLOR}\2${NC}\3/g"
+	META_REGEX=$(sed -E 's|^|(|;s|([^\])\)|\1)(|;s|([^\])\(|\1)(|;s|$|)|' <<< $REGEX)
+	RULE=";s/${META_REGEX}/\1${BEEP}${!COLOR}\2${NC}\3/g"
 	else
-		RULE=";s/($REGEX)/${BEEP}${!COLOR}\1${NC}/g"
+	RULE=";s/($REGEX)/${BEEP}${!COLOR}\1${NC}/g"
 	fi
 
-  SEDRULES="${SEDRULES}${RULE}"
+	SEDRULES="${SEDRULES}${RULE}"
 done
 
 # call sed with the compiled sedrules to colorize the text
@@ -50,10 +50,10 @@ sed -E "$SEDRULES"
 #
 # This script is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this script; if not, write to the
 # Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-# Boston, MA  02111-1307  USA
+# Boston, MA	02111-1307	USA
