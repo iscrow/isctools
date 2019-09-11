@@ -2,6 +2,15 @@
 #Inspired by and improvement of https://fam.tuwien.ac.at/~schamane/_/mycolorize
 . colors.sh
 
+if [ -t 0 ]; then
+	echo "Usage:"
+	echo "  echo text | colorize color pattern [beep|bell] [color pattern [beep|bell] ... color pattern[beep|bell]]"
+	echo "  cat /proc/cpuinfo | colorize green 'model name\s+: (.*)' blue Intel red AMD purple '([^ ]+)GHz'"
+	echo "  As an optional 3rd parameter you can add beep or bell to be alerted on match"
+	echo "  echo 'this is an emergency' | colorize red emergency beep"
+	exit
+fi
+
 BELL=$(tput bel) 
 
 # compile all rules given at command line to 1 set of rules for SED
