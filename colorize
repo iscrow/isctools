@@ -11,8 +11,6 @@ if [ -t 0 ]; then
 	exit
 fi
 
-BELL=$(tput bel) 
-
 # compile all rules given at command line to 1 set of rules for SED
 while [ "/$1/" != '//' ] ; do
 	# reset variables

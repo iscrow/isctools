@@ -52,3 +52,5 @@ UNDERLINE=$'\e[4m'
     BLINK=$'\e[5m'
    INVERT=$'\e[7m'
    HIDDEN=$'\e[8m'
+
+	   BELL=$'\a'
