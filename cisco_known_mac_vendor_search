@@ -37,6 +37,6 @@ while IFS= read -r LINE; do
 	VENDOR=$(findVendor $MAC)
 	echo "$MAC $IP_PADDED  $VENDOR" | colorize red "..:..:..:..:..:.." green "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
 
-done < <(. cisco_command ${NODE} sh arp :: sh ip dhcp bind | grep -P '   ([0-9a-f]{3})?[0-9a-f.]{14} ' | perl -pe 's/(?:^|.*\D)([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .*(([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})|([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})) .*/$1 $3:$4:$5:$6:$7:$8$9:$10:$11:$12:$13:$14/g;s/:{5}//g') | sort -V
+done < <(. cisco_command ${NODE} sh arp :: sh ip dhcp bind | grep -P '   ([0-9a-f]{3})?[0-9a-f.]{14} ' | perl -pe 's/(?:^|.*\D)([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .*(([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})|([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})) .*/$1 $3:$4:$5:$6:$7:$8$9:$10:$11:$12:$13:$14/g;s/:{5}//g') | sort -Vu
 #done < <(snmpbulkwalk -c${SNMPCOMMUNITY} -v2c -OXsqn "$NODE" .1.3.6.1.2.1.3.1.1.2) | sort -V # This only works with the arp table. DHCP bindings on cisco ios are not available via SNMP
 
