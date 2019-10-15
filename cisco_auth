@@ -3,7 +3,7 @@
 if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
 	if [ ! -t 1 ] || [ ! -t 0 ]; then
 		# stdout isn't a terminal
-		echo "There are no cached credentials. Please run '. cisco_command' alone to cache them."
+		echo "There are no cached credentials. Please run '. cisco_command' alone to cache them." >&2
 		return 2>&-
 		exit 1
 	fi
