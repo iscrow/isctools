@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 TFTP_SERVER="10.10.100.227"
-PCAP_FILE="capture.pcap"
 
 CISCO_ROUTER="$1"
 
@@ -52,6 +51,8 @@ while [ -z "$CISCO_ROUTER" ]; do
 	echo -n "Enter hostname/IP of the cisco router: "
 	read CISCO_ROUTER
 done
+
+PCAP_FILE="CAPTURES/capture-${CISCO_ROUTER}.pcap"
 
 while [ -z "$(ip_validate $ACL_SRC_IP)" ]; do
 	echo -n "Enter source IP address: "
@@ -150,7 +151,7 @@ $TEMPLATE_STOP
 $TEMPLATE_REMOVE_BUFFER
 "
 
-TFTP_GET_COMMAND="get $PCAP_FILE /tmp/$PCAP_FILE
+TFTP_GET_COMMAND="get $PCAP_FILE /tmp/$(basename "$PCAP_FILE")
 quit"
 
 function startCapture {
@@ -180,7 +181,7 @@ function getFile {
 }
 
 function openWireshark {
-	wireshark /tmp/$PCAP_FILE &
+	wireshark /tmp/$(basename "$PCAP_FILE") &
 }
 
 function emergencyStop {
