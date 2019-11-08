@@ -10,12 +10,56 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 	return 1
 fi
 
-if [ -z "$SWITCH" ]; then
+PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    -v|--vlan)
+      VLAN=$2
+      shift 2
+      ;;
+    -n|--name)
+      NAME=$2
+      shift 2
+      ;;
+    --) # end argument parsing
+      shift
+      break
+      ;;
+    -*|--*=) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+			usage
+      exit 1
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
+
+function usage {
 	echo "Usage:"
-	echo "aruba_loopprotect switch_ip"
-	echo "aruba_loopprotect 192.168.3.12"
+	echo "aruba_vlan switch_ip [-v|--vlan n] [-n|--name 'VLAN_NAME']"
+	echo "aruba_vlan 192.168.3.12 -v 2 -n 'Voice VLAN 2'"
 	return 1 2>&- || exit
-fi
+}
+
+while [ -z "$SWITCH" ]; do
+	echo -n "Enter a switch IP: "
+	read SWITCH
+done
+
+while [[ ! "$VLAN" =~ [0-9]+ ]]; do
+	echo -n "Enter VLAN Number: "
+	read VLAN
+done
+
+while [ -z "$NAME" ]; do
+	echo -n "Enter VLAN Name: "
+	read NAME
+done
 
 source aruba_auth
 
@@ -71,28 +115,28 @@ choose() {
 	done
 
 	echo "Selected Uplink ports: $UPLINK_PORTS" | colorize green "."
-	echo "  Selected Edge ports: $EDGE_PORTS" | colorize yellow "."
+	#echo "  Selected Edge ports: $EDGE_PORTS" | colorize yellow "."
 }
 
-loop_protect() {
-	CMD="config term::loop-protect disable-timer 60::"
-	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-disable::"
-	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-recv-dis"
+define_vlan() {
+	CMD="configure terminal::"
+	CMD+="vlan ${VLAN}::"
+	CMD+="name ${NAME}::"
 
-	[ "$UPLINK_PORTS" ] && CMD+="::loop-protect ${UPLINK_PORTS} receiver-action no-disable"
-	CMD+="::end::show loop-protect"
+	[ "$UPLINK_PORTS" ] && CMD+="tag ${UPLINK_PORTS}::"
+	CMD+="end::show vlan ${VLAN}"
 	echo
 	echo "Commands:"
 	echo "$CMD" | sed -E 's/::/\n/g' | colorize \
-		green 'loop-protect (.*) receiver-action no-disable' \
-		yellow 'loop-protect (.*) receiver-action send-'
+		green 'tag (.*)' \
+		yellow 'name (.*)'
 	GO=""
 	while [[ ! "$GO" =~ yes|no ]]; do
 		echo -n "Apply? (yes/no): " | colorize green '.'
 		read GO
 	done
 
-	[ "$GO" == "yes" ] && aruba_command "$SWITCH" "$CMD" | colorize green ".*no-disable.*" yellow ".*send-.*"
+	[ "$GO" == "yes" ] && aruba_command "$SWITCH" "$CMD" | colorize green "tag .*" yellow "name .*"
 }
 
 save() {
@@ -105,7 +149,7 @@ save() {
 }
 
 choose
-loop_protect
+define_vlan
 ping "$SWITCH" -c 4
 echo
 save
