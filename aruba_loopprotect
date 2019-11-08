@@ -11,6 +11,8 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 fi
 
 if [ -z "$SWITCH" ]; then
+	echo "aruba_loopprotect configures loop protect ports on HP/Aruba switches."
+	echo
 	echo "Usage:"
 	echo "aruba_loopprotect switch_ip"
 	echo "aruba_loopprotect 192.168.3.12"

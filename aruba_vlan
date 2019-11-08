@@ -28,7 +28,6 @@ while (( "$#" )); do
     -*|--*=) # unsupported flags
       echo "Error: Unsupported flag $1" >&2
 			usage
-      exit 1
       ;;
     *) # preserve positional arguments
       PARAMS="$PARAMS $1"
@@ -40,6 +39,8 @@ done
 eval set -- "$PARAMS"
 
 function usage {
+	echo "aruba_vlan defines a VLAN and tags it on uplink/downlink ports on HP/Aruba switches."
+	echo
 	echo "Usage:"
 	echo "aruba_vlan switch_ip [-v|--vlan n] [-n|--name 'VLAN_NAME']"
 	echo "aruba_vlan 192.168.3.12 -v 2 -n 'Voice VLAN 2'"
