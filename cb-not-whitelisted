@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+clipboard "  AND NOT process_effective_reputation:*WHITE*"
+

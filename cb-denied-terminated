@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+clipboard " AND (sensor_action:DENY OR sensor_action:TERMINATE)"

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+clipboard " AND NOT (process_cmdline:*bigfix* OR process_cmdline:*tivoli*)"

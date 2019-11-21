@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+URL=$1
+
+SCRIPT=$(basename $0)
+DATA_REGEX='^Last-Modified: '
+if [ -n "$URL" ] && [[ ! "$URL" =~ ^- ]] ;then 
+	#curl -s -v -X HEAD "$URL" 2>&1 | grep '^< Last-Modified:'
+	HEADERS=$(curl -I "$URL" 2>&1)
+	[ $? -ne 0 ] && echo "Can't connect to $URL" 1>&2 && exit 1
+	UPDATED=$(grep -P "$DATA_REGEX" <<< "$HEADERS" | sed -E "s/$DATA_REGEX//g")
+	[ -z "$UPDATED" ] && echo "No timestamp sent by the server at $URL" >&2 && exit 1
+	echo $UPDATED
+else
+	echo "$SCRIPT shows the remote last modified time for a URL"
+	echo
+	echo "Usage:"
+	echo "  $SCRIPT <url>"
+	echo "Example:"
+	echo "  $SCRIPT https://www.google.com"
+	exit 1
+fi
+
