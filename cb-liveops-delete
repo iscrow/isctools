@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+echo "Paste the CB LiveOps Directory Listing and press ctrl-d:"
+DATA=$(cat)
+
+LIST=$(echo "$DATA" | perl -p -e 's#\d\d/\d\d/\d\d\d\d\s+\d\d:\d\d\s+[AP]M\s+\S+\s+#\n#g' | grep -P '^\d+\s+' | perl -pe 's/^\d+\s//g' )
+
+echo
+echo "To delete all files in the pasted directory listing paste this in the CB LiveResponse window." | colorize red .
+echo "The data below should already be in your clipboard." | colorize yellow .
+
+while read -r NAME; do
+	echo -n "rm $NAME "
+	echo
+done <<< "$LIST" | tee /dev/tty | clipboard
+echo
