@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+IP=$(ip_validate $1)
+SCRIPT=$(basename $0)
+
+function usage {
+	echo "$SCRIPT gives you the geo-location of an IP address"
+	echo
+	echo "Usage:"
+	echo "  $SCRIPT <ip address>"
+	exit 1
+}
+
+function locate {
+	local IP=$1
+	curl -s -k https://ipinfo.io/$IP | grep -P '"city"|"region"|"country"' | perl -pe 's/.*: "(.*)",\n/\1, /g;' | perl -pe 's/, $/\n/g'
+}
+
+[ -z '$IP' ] && usage
+
+locate $IP
+
