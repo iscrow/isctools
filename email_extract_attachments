@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+
+SCRIPT=$(basename $0)
+TMP="/tmp/$SCRIPT-$(date "+%Y-%m-%d--%H-%M-%S")"
+mkdir "$TMP"
+
+ORIG_FILE="$TMP/original_message"
+
+echo "Paste email source. ctrl-d when done" | grep -P "ctrl-d|$" --color=auto
+DATA=$(cat)
+echo "$DATA" > $ORIG_FILE
+
+ripmime -d "$TMP" --paranoid -v -i - <<< "$DATA"
+
+echo DONE. Files extracted in "$TMP"
+ls -lh "$TMP"
+
+xdg-open "$TMP"
