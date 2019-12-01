@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+echo -n "Enter a path to delete: "
+read -r DELPATH
+
+CMD="execfg c:\windows\system32\cmd.exe /c \"dir $DELPATH\""
+CMD+=$'\n'
+CMD+="execfg c:\windows\system32\cmd.exe /c \"rmdir /s /q $DELPATH\""
+CMD+=$'\n'
+CMD+="execfg c:\windows\system32\cmd.exe /c \"dir $DELPATH\""
+
+echo "$CMD" | clipboard
+
+echo "Paste these commands in live response. They should already be in your clipboard:"
+echo "$CMD"
