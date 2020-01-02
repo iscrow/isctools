@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 echo "Paste the CB LiveOps Directory Listing and press ctrl-d:"
-DATA=$(cat)
+DATA=$(cat | cb-sanitize-string)
 
 LIST=$(echo "$DATA" | perl -p -e 's#\d\d/\d\d/\d\d\d\d\s+\d\d:\d\d\s+[AP]M\s+\S+\s+#\n#g' | grep -P '^\d+\s+' | perl -pe 's/^\d+\s//g' )
 

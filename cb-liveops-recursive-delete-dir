@@ -3,11 +3,12 @@
 echo -n "Enter a path to delete: "
 read -r DELPATH
 
-CMD="execfg c:\windows\system32\cmd.exe /c \"dir $DELPATH\""
+CMD="dir $DELPATH"
 CMD+=$'\n'
-CMD+="execfg c:\windows\system32\cmd.exe /c \"rmdir /s /q $DELPATH\""
+#CMD+="execfg c:\windows\system32\cmd.exe /c \"rmdir /s /q '$DELPATH'\""
+CMD+="execfg c:\windows\system32\cmd.exe /c rmdir /s /q \"$DELPATH\""
 CMD+=$'\n'
-CMD+="execfg c:\windows\system32\cmd.exe /c \"dir $DELPATH\""
+CMD+="dir $DELPATH"
 
 echo "$CMD" | clipboard
 
