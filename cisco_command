@@ -46,7 +46,7 @@ COMMANDS="$(sed -E 's/::/\n/g' <<< $COMMANDS)"
 
 function runCommands {
 	/usr/bin/env expect -c '
-	set timeout 30
+	set timeout 60
 	set DEVICE $::env(DEVICE)   
 	set COMMANDS [split $::env(COMMANDS) "\n"]   
 	set USER "admin"
