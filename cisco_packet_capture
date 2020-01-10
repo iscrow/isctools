@@ -103,6 +103,7 @@ export ENABLE="$CISCO_SHOWRUNN_ENABLE"
 INT_COMMAND="show ip interface brief"
 INTERFACE_LIST="$(. cisco_command $CISCO_ROUTER $INT_COMMAND | grep -Pv """$INT_COMMAND|NVI0|Embedded-Service-Engine""")"
 INTERFACES=$(echo "$INTERFACE_LIST" | grep -Pv 'IP-Address' | awk '{print $1}' | tr '\n' ' ')
+INTERFACES+=" all"
 
 echo "$INTERFACE_LIST"
 echo
