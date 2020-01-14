@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+IP=$1
+
+function aruba_hop() {
+	local SWITCHIP=$1
+	local MAC=$2
+	local IP=$3
+	local SWITCHHOSTNAME=$4
+	local MACTABLE=$(aruba_command $SWITCHIP sh mac-address $MAC | grep -P '^\s+\d+\s+\d+\s*$')
+	local PORT
+	local VLAN
+	read -r PORT VLAN <<< "$MACTABLE"
+	if [ -z "$PORT" ]; then
+		echo
+		echo "Reached $SWITCHHOSTNAME - $SWITCHIP and there's not record for MAC $MAC ($IP)" >&2
+		echo "Giving Up..." >&2
+		exit 2
+	fi
+	echo "aruba_command $SWITCHIP sh lldp i r $PORT" >> /tmp/lantrace.log
+	LLDP=$(aruba_command $SWITCHIP sh lldp i r $PORT)
+	local NEXTPORT=$(echo "$LLDP" | grep -P "PortId\s+:\s" | sed -E 's/\s+PortId\s+:\s+//g;s/\s+$//g')
+	local NEXTHOSTNAME=$(echo "$LLDP" | grep -P "SysName\s+:\s" | sed -E 's/\s+SysName\s+:\s+//g;s/\s+$//g')
+	local NEXTIP=$(echo "$LLDP" | grep -P "\s+Address\s+:\s" | sed -E 's/\s+Address\s+:\s+//g;s/\s+$//g')
+	if [[ "$NEXTHOSTNAME" =~ regDN ]]; then
+		PHONE_EXT=$(sed -E 's/.*regDN ([0-9]+),MITEL.*/\1/g' <<< $NEXTHOSTNAME)
+		if [ "$IP" == "$NEXTIP" ]; then
+			echo "TARGET|$SWITCHIP|Mitel ext. $PHONE_EXT|$PORT"
+		else
+			echo "FAKEINTERMEDIATE|$NEXTIP|Mitel ext. $PHONE_EXT|$PORT"
+		fi
+	else
+		[ -z "$NEXTIP" ] && echo "TARGET|$IP||$PORT||$VLAN" && return
+		
+		if [ "$IP" == "$NEXTIP" ]; then
+			echo "'$IP' '$NEXTHOSTNAME' '$NEXTPORT'" >> /tmp/lantrace.log
+			echo "TARGET|$NEXTIP|$NEXTHOSTNAME|$PORT|$NEXTPORT|$VLAN"
+		else
+			echo "INTERMEDIATE|$NEXTIP|$NEXTHOSTNAME|$PORT|$NEXTPORT|$VLAN"
+		fi
+	fi
+}
+
+function aruba_macport() {
+	local SWITCHIP=$1
+	local MAC=$2
+	local IP=$3
+	local PORT=$4
+	local SWITCHHOSTNAME=$5
+	if [[ "$SWITCHHOSTNAME" =~ ^Mitel\ ext\.\ [0-9]+ ]]; then
+		printf "%-6s %-15s %-15s %-9s %-9s\n" LANHop $SWITCHIP "$SWITCHHOSTNAME" "LAN" "PC"
+		printf "%-6s %-15s %-15s %-9s %-9s\n" TARGET $IP "" "" "$MAC"
+		exit
+	fi
+	local MACTABLE="$(aruba_command $SWITCHIP sh mac-address $PORT | grep -P '^\s+[0-9a-f]+-[0-9a-f]+\s+\d+\s*$')"
+	echo "aruba_command $SWITCHIP sh mac-address $PORT" >> /tmp/lantrace.log
+	MACS=$(grep -P "\d" -c <<< "$MACTABLE")
+	if [ "$MACS" -gt 1 ]; then
+		OTHERMACS=$(($MACS-1))
+		[ "$OTHERMACS" -ne 1 ] && PLURAL="s"
+		echo "$IP with mac address $MAC was found on PORT along with $(($MACS-1)) other device$PLURAL:"
+		echo "$MACTABLE"
+		echo
+		echo "Could not analyze next switch. Is it managed? Giving up..."
+	else
+		printf "%-6s %-15s %-15s\n" TARGET $IP $MAC
+	fi
+}
+
+function finish() {
+	kill "$PINGPID" &>/dev/null
+}
+
+
+L3HOPS=$(traceroute $IP -n -w 3 -q 1 -N 32 -m 6 2>&-| grep -vP "\s$IP\s" | awk '/^\s[0-9]\s+[0-9]/{print $2}')
+
+
+. cisco_auth
+. aruba_auth
+
+ping $IP &>/dev/null &
+PINGPID=$!
+
+trap finish EXIT
+
+printf "%-6s %-15s %-15s %-9s %-9s\n" TYPE IP NAME/ID "PORT_IN" "PORT_OUT"
+
+for ROUTER in $L3HOPS; do
+	printf "%-6s %-15s\n" L3Hop $ROUTER
+done
+
+ARPRAW=$(cisco_command $ROUTER "! :: sh arp $IP")
+HOSTNAME=$(echo "$ARPRAW" | grep '#sh arp' | cut -d\# -f1)
+ARP=$(grep -P '^Internet' <<< $ARPRAW)
+ARPSEC=$(awk '{print $3}' <<< $ARP)
+MAC=$(awk '{print $4}' <<< $ARP)
+if [[ ! "$MAC" =~ ....\.....\..... ]]; then
+	echo "Cannot find MAC address for $IP. $HOSTNAME - $ROUTER reported MAC as '$MAC'" >&2
+	echo "Giving up..." >%2
+	exit 1
+fi
+IF=$(awk '{for(i=6;i<=NF;++i)print $i}' <<< "$ARP")
+printf "%-6s %-15s %-15s %-9s %-9s\n" LANHop $ROUTER "$HOSTNAME" "-" $IF
+LLDP=$(cisco_command $ROUTER "sh lldp ne $IF detail")
+NEXTPORT=$(echo "$LLDP" | grep "Port Description: " | cut -d\  -f3-)
+NEXTHOSTNAME=$(echo "$LLDP" | grep "System Name: " | cut -d\  -f3-)
+NEXTIP=$(echo "$LLDP" | grep -P "^\s+IP: " | awk '{print $2}')
+#echo $NEXTPORT
+#echo $NEXTHOSTNAME
+#echo $SWITCHIP
+[ "$IP" == "$NEXTIP" ] && TYPE="TARGET" || TYPE="INTERMEDIATE"
+
+while [ "$TYPE" == "INTERMEDIATE" ]; do
+	LASTIP=$NEXTIP
+	printf "%-6s %-15s %-15s %-9s " LANHop $NEXTIP "$NEXTHOSTNAME" "$NEXTPORT"
+	HOPDATA=$(aruba_hop $NEXTIP $MAC $IP $NEXTHOSTNAME)
+	OLDIFS="$IFS"; IFS="|"
+	read -r TYPE NEXTIP NEXTHOSTNAME PORT NEXTPORT VLAN <<< "$HOPDATA"
+	IFS="$OLDIFS"
+	printf "%-9s\n" $PORT
+done
+
+
+echo "HOPDATA: $HOPDATA" >> /tmp/lantrace.log
+echo "DECISION: $TYPE $NEXTIP $NEXTHOSTNAME" >> /tmp/lantrace.log
+
+if [ "$TYPE" == "TARGET" ]; then
+	[[ "$NEXTHOSTNAME" =~ Mitel ]] && NEXTPORT="LAN"
+	printf "%-6s %-15s %-15s %-9s %-9s\n" TARGET $IP "$NEXTHOSTNAME" "$NEXTPORT" "$MAC"
+else
+	aruba_macport $NEXTIP $MAC $IP $PORT "$NEXTHOSTNAME"
+fi
+
