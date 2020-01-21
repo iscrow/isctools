@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+#Finds the last downloaded zipped binary from cb defense, 
+#nzips it and allows opens the directory with bash and the
+#default file manager (to submit to virustotal, etc.)
+
+ZIP=$(ls -tr ~/Downloads/????????????????????????????????????????????????????????????????.zip | tail -n 1)
+stat "$ZIP" | grep -P "File:|Birth:" | colorize green 'Birth: .*'
+DIR=$(mktemp -d /tmp/cb-binary-unpack.XXXXXXXX)
+if [ $? -ne 0 ]; then
+	echo "Cannot create temp directory. Exiting."
+	exit 1
+fi
+
+function finish {
+  [ -n "$DIR" ] && [[ "$DIR" =~ /tmp/cb-binary-unpack.* ]] && [ -d "$DIR" ] && rm -rf "$DIR"
+}
+trap finish EXIT
+
+cd "$DIR"
+7z e "$ZIP"
+
+if [ ! -e "$DIR/filedata" ]; then
+	echo "$DIR/filedata" does not exit. Exiting.
+	exit 2
+fi
+
+while [ -z "$FILENAME" ]; do
+	echo -n "Enter original filename: "
+	read FILENAME
+done
+
+mv filedata "$FILENAME"
+if [ "$?" -ne 0 ]; then
+	echo "Could not rename filedata to $FILENAME"
+fi
+
+xdg-open "$DIR"
+$SHELL
+echo "Removing $ZIP"
+rm $ZIP
