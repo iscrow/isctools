@@ -35,7 +35,13 @@ if [ "$?" -ne 0 ]; then
 	echo "Could not rename filedata to $FILENAME"
 fi
 
-xdg-open "$DIR"
+xdg-open "$DIR" &
 $SHELL
-echo "Removing $ZIP"
-rm $ZIP
+REMOVE="?"
+while [[ ! "$REMOVE" =~ ^(y|n|Y|N|)$ ]]; do
+	echo -n "Remove $ZIP? Default: y (y|n): "
+	REMOVE="y"
+	read -n1 REMOVE
+	echo
+done
+[[ "$REMOVE" =~ ^(y|Y|)$ ]] && echo "Removing $ZIP" && rm "$ZIP"
