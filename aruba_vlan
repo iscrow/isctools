@@ -97,8 +97,8 @@ menu() {
 
 choose() {
 	prompt="Check an option (again to uncheck, ENTER when done): "
-	while menu && read -rp "$prompt" num && [[ "$num" ]]; do
-		[[ "$num" != *[![:digit:]]* ]] &&
+	while menu && echo "Switch: $SWITCH" | colorize blue "Switch: (.*)" && read -rp "$prompt" num && [[ "$num" ]]; do
+			[[ "$num" != *[![:digit:]]* ]] &&
 		(( num > 0 && num <= ${#ARR_PORTS[@]} )) ||
 		{ msg="Invalid option: $num"; continue; }
 		((num--)); msg="${ARR_PORTS[num]} was ${ARR_CHOICES[num]:+un}checked"
@@ -114,7 +114,6 @@ choose() {
 			EDGE_PORTS+="${ARR_PORTS[i]}"
 		fi
 	done
-
 	echo "Selected Uplink ports: $UPLINK_PORTS" | colorize green "."
 	#echo "  Selected Edge ports: $EDGE_PORTS" | colorize yellow "."
 }
