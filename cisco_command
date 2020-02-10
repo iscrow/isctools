@@ -71,6 +71,8 @@ function runCommands {
 	expect -re $PROMPT {
 		send "terminal length 0\r"
 		expect -re $PROMPT
+		send "terminal width 0\r"
+		expect -re $PROMPT
 		foreach COMMAND $COMMANDS {
 			# This is to clean up the previous expect_out(buffer) content
 			# So that, we can get the exact output what we need.
