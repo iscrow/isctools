@@ -33,7 +33,8 @@ function aruba_hop() {
 			echo "FAKEINTERMEDIATE|$NEXTIP|Mitel ext. $PHONE_EXT|$PORT"
 		fi
 	else
-		#[ -z "$NEXTIP" ] && echo "TARGET|$IP||$PORT||$VLAN" && return
+		#This is needed to stop at endpoints without and LLDP IP.
+		[ -z "$NEXTIP" ] && echo "TARGET|$IP||$PORT||$VLAN" && return
 		
 		if [ "$IP" == "$NEXTIP" ]; then
 			echo "TARGET|$NEXTIP|$NEXTHOSTNAME|$PORT|$NEXTPORT|$VLAN"
