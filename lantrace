@@ -100,7 +100,7 @@ ARPSEC=$(awk '{print $3}' <<< $ARP)
 MAC=$(awk '{print $4}' <<< $ARP)
 if [[ ! "$MAC" =~ ....\.....\..... ]]; then
 	echo "Cannot find MAC address for $IP. $HOSTNAME - $ROUTER reported MAC as '$MAC'" >&2
-	echo "Giving up..." >%2
+	echo "Giving up..." >&2
 	exit 1
 fi
 IF=$(awk '{for(i=6;i<=NF;++i)print $i}' <<< "$ARP")
