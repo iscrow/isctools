@@ -1,24 +1,50 @@
 #!/usr/bin/env bash
 
-if [ $# -eq 0 ] || [[ "$1" =~ -h$|--help$ ]]; then
-		echo 'OUI identifies the vendor of a mac address/OUI entries. Multiple entries supported.'
-		echo 'Where OUI is "Organizational Unit Identifier" - the first half (24 bits) of a mac address'
-		echo 'usage: oui mac_address/OUI [mac_address/OUI]...'
-		echo
-		exit 1
-fi
+DB=~/.macvendors.csv
+TMP_DB="$DB.tmp"
+DB_URL="https://macaddress.io/database/macaddress.io-db.csv"
 
-for MAC in $*; do
-	OUI=$(sed -e 's/[^0-9a-fA-F]//g' <<< $MAC | cut -c1-6)
+function finish {
+  rm "$TMP_DB" &>/dev/null
+}
+trap finish EXIT
 
-	[ ${#OUI} -ne 6 ] && echo "$MAC -> INVALID" && break
+function usage {
+	echo "Usage: $0 MAC-address|OUI [MAC-address|OIU MAC-address|OUI ...]" >&2
+	exit 1
+}
 
-	BEARER="eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJtYWN2ZW5kb3JzIiwiZXhwIjoxODU4OTUwMzQ1LCJpYXQiOjE1NDQ0NTQzNDUsImlzcyI6Im1hY3ZlbmRvcnMiLCJqdGkiOiJiZGEzY2ZjOC00OWJjLTRiMmYtODI4ZS0xNGE1MmIzZmY0ZTYiLCJuYmYiOjE1NDQ0NTQzNDQsInN1YiI6Ijk5MCIsInR5cCI6ImFjY2VzcyJ9.voDcQ9Dh-VaMV4gF3lFdlXQ_XlRLN1TPqSaJMk9mprbAtmoR8aBas7Xyqk26yX38qL6l0NvEO-uP2QUS8xEH4Q"
+function refreshDatabase() {
+	OLD=$(find $DB -type f -mtime +7 2>&- | wc -l)
+	if [ $OLD -eq 1 ] || [ ! -s "$DB" ]; then
+		curl -s "$DB_URL" > "$TMP_DB"
+		[ -s "$TMP_DB" ] && mv "$TMP_DB" "$DB" || rm "$TMP_DB"
+	fi
+	[ ! -s "$DB" ] && echo "Could not obtain MAC Database. Exiting." && exit 1
+}
 
-	VENDOR=$(curl -Gs "https://api.macvendors.com/v1/lookup/$OUI" \
-								-H "Authorization: Bearer $BEARER" \
-								-H "Accept: text/plain")
-	[[ "$VENDOR" =~ \"errors\" ]] && VENDOR="$(sed -E 's/.*"([^"]+)"}}/\1/g' <<< $VENDOR)"
+function findVendor() {
+	local MAC="$*"
+	local OUI=$(echo "${MAC^^}" | sed -E 's/[^0-9A-F]//g;s/^(..)(..)(..).*/\1:\2:\3/g')
+	local VENDOR=$(grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
+	printf "%-18s  %-6s  %s\n" "$MAC" "$OUI" "$VENDOR"
+}
 
-	echo "$OUI -> $VENDOR"
+refreshDatabase
+
+for QUERY in $*; do
+	NORMALIZED=$(sed -E 's/[^0-9a-fA-F]//g' <<< "$QUERY")
+	if [[ "$QUERY" =~ ^[0-9a-fA-F:-]+$ ]] && [ ${#NORMALIZED} -ge 6 ]; then
+		findVendor "$QUERY"
+	else
+		echo "'$QUERY' is not a MAC address/OUI"
+	fi
+
 done
+
+[ -z "$*" ] && usage
+
+
+
+
+
