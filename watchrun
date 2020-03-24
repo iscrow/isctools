@@ -13,6 +13,11 @@ shift
 COMMAND="$*"
 
 while [ -z "$PRESSED" ]; do
+	wait=0
+	while [ ! -e "$FILE" ] && [ $wait -lt 3 ]; do
+		sleep 0.1
+		((i++))
+	done
 	CHANGED=$(stat -c %y "$FILE")
 	if [ "$CHANGED" != "$LASTCHANGED" ]; then
 		echo "$YELLOW$BGRED$(date)  Running: $COMMAND$NC"
