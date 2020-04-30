@@ -31,7 +31,7 @@ TMP_ORIG_FILE="$ORIG_FILE.tmp"
 echo "Paste email source or curl command. ctrl-d when done" | grep -P "ctrl-d|$" --color=auto
 DATA=$(cat)
 if [[ "$DATA" =~ ^curl\  ]]; then
-	URL=$(sed -e 's/|.*//' <<< "$DATA")
+	URL=$( ( sed -E 's/\|.*//;s/\\//g' | tr -d '\n' ) <<< "$DATA")
 	# Use recode to decode html escaped characters 
 	eval $URL -o "$TMP_ORIG_FILE"
 	cat "$TMP_ORIG_FILE" | recode -f html..ascii > $ORIG_FILE
