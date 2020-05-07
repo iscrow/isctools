@@ -40,7 +40,15 @@ def check_url(url, regex):
 @click.command()
 @click.argument('regex')
 def check(regex):
-    """Check woot categories for an item title matching <regex>"""
+    """
+    \b
+    Check woot categories for an item title matching <REGEX>
+    regex is case insensitive, it's checked as: .*REGEX.*
+    for example:
+
+    woot_notify 'onkyo.*receiver.*tx-rz[13]100'
+    """
+
     for url in urls:
         check_url(url, regex)
 
