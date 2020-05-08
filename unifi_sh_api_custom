@@ -1,0 +1,12 @@
+#!/bin/sh
+
+#username=ubnt
+#password=ubnt
+#baseurl=https://unifi:8443
+#site=default
+#[ -f ./unifi_sh_env ] && . ./unifi_sh_env
+
+unifi_list_sites() {
+    ${curl_cmd} $baseurl/api/self/sites
+}
+
