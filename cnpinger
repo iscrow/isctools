@@ -9,7 +9,7 @@ do
 key="$1"
 
 case $key in
-    -i|--interval)
+    -p|--period)
     INTERVAL="$2"
     shift # past argument
     shift # past value
@@ -56,7 +56,7 @@ if [ "$2" == "+" ]; then
 fi
 
 if [ -z "$TARGETS" ]; then
-	echo "Usage: cnpinger [-i|--interval 0.02] [-s|--size 0] [-y|--yscale 1 (use 0 for auto)] hosts"
+	echo "Usage: cnpinger [-p|--period 0.02] [-s|--size 0] [-y|--yscale 1 (use 0 for auto)] hosts"
 	echo "Examples:"
 	echo "cnpinger -i 0.01 192.168.1.1"
 	echo "cnpinger 192.168.1.1 192.168.1.2"
@@ -71,7 +71,7 @@ expset=$(echo $TARGETS | sed -e 's/\([0-9]\+\)-\([0-9]\+\)/$(seq -s, \1 \2)/g')
 expset=$(echo echo $expset | sh | tr , "\n" | sort -V | tr "\n" " " | sed -e 's/,$//g')
 set -- "$expset"
 
-CNARGS="$INTERVAL $SIZE $YSCALE"
+CNARGS="-p $INTERVAL -s $SIZE -y $YSCALE"
 
 if [ ! -z "$DEBUG" ]; then
 	#If debuggin, print out parameters

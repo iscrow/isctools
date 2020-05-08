@@ -105,6 +105,7 @@ if [[ ! "$MAC" =~ ....\.....\..... ]]; then
 fi
 IF=$(awk '{for(i=6;i<=NF;++i)print $i}' <<< "$ARP")
 printf "%-6s %-15s %-15s %-9s %-9s\n" LANHop $ROUTER "$HOSTNAME" "-" $IF
+[[ "$IF" =~ \.[0-9]+$ ]] && IF=$(sed -E 's/\.[0-9]+$/.1/g' <<< "$IF")
 LLDP=$(cisco_command $ROUTER "sh lldp ne $IF detail")
 NEXTPORT=$(echo "$LLDP" | grep "Port Description: " | cut -d\  -f3-)
 NEXTHOSTNAME=$(echo "$LLDP" | grep "System Name: " | cut -d\  -f3-)
