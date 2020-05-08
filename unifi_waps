@@ -17,7 +17,9 @@ find_site() {
 	site=$SITE_ID_MATCH
 }
 
-
+username="$unifi_username"
+password="$unifi_password"
+baseurl="$unifi_baseurl"
 
 unifi_login &>/dev/null
 find_site

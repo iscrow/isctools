@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ -z "$username" ]; then
+if [ -z "$unifi_username" ]; then
 	if [ ! -t 1 ] || [ ! -t 0 ]; then
 		# stdout isn't a terminal
 		echo "There are no cached credentials. Please run '. unifi_auth' alone to cache them."
@@ -10,19 +10,19 @@ if [ -z "$username" ]; then
 
 	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
 	
-	if [ -z $username ]; then
+	if [ -z $unifi_username ]; then
 		>&2 echo -n 'Username: '
-		read username
+		read unifi_username
 	fi
 	
 	>&2 echo -n 'Password: '
-	read -s password
+	read -s unifi_password
 	>&2 echo
 	>&2 echo
 
-	export username
-	export password
-	export baseurl=https://unifi.parkdalemills.com:8443
-	export site=default
+	export unifi_username
+	export unifi_password
+	export unifi_baseurl=https://unifi:8443
+	export unifi_site=default
 fi
 
