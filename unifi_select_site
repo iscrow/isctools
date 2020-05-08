@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+SCRIPTPATH="$(dirname $(realpath $0))"
+
+export site="${*:-default}"
+export unifi_site="$*"
+export username="$unifi_username"
+export password="$unifi_password"
+export baseurl="$unifi_baseurl"
+
+. unifi_auth
+
+. $SCRIPTPATH/unifi_sh_api
+. $SCRIPTPATH/unifi_sh_api_custom
+
+site="$unifi_site"
+unifi_login &>/dev/null
+SITE_MATCH="$(unifi_list_sites | jq -r '.data[] | "\(.name)\t\(.desc)"' | grep -Pi "^\S+\t.*$site.*$")"
+SITE_ID_MATCH="$(cut -d$'\t' -f1 <<< "$SITE_MATCH")"
+SITE_MATCH_COUNT=$(wc -w <<< $SITE_ID_MATCH)
+[ ${SITE_MATCH_COUNT} -eq 0 ] && echo "No site match for $site" && exit 1
+[ ${SITE_MATCH_COUNT} -gt 1 ] && echo "Please enter a unique site search string. Fund multiple sites for search '$site'" && echo "$SITE_MATCH" | cut -d$'\t' -f2 && exit 2
+export site=$SITE_ID_MATCH

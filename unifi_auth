@@ -23,6 +23,5 @@ if [ -z "$unifi_username" ]; then
 	export unifi_username
 	export unifi_password
 	export unifi_baseurl=https://unifi:8443
-	export unifi_site=default
 fi
 

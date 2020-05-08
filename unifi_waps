@@ -2,27 +2,9 @@
 
 SCRIPTPATH="$(dirname $(realpath $0))"
 
+site="$*"
+
 . unifi_auth
-. $SCRIPTPATH/unifi_sh_api
-. $SCRIPTPATH/unifi_sh_api_custom
+. unifi_select_site "$site"
 
-site=$1
-
-find_site() {
-	SITE_MATCH="$(unifi_list_sites | jq -r '.data[] | "\(.name)\t\(.desc)"' | grep -Pi "^\S+\t.*$site.*$")"
-	SITE_ID_MATCH="$(cut -d$'\t' -f1 <<< "$SITE_MATCH")"
-	SITE_MATCH_COUNT=$(wc -w <<< $SITE_ID_MATCH)
-	[ ${SITE_MATCH_COUNT} -eq 0 ] && echo "No site match for $site" && exit 1
-	[ ${SITE_MATCH_COUNT} -gt 1 ] && echo "Fund multiple sites for $site" && echo "$SITE_MATCH" | cut -d$'\t' -f2 && exit 2
-	site=$SITE_ID_MATCH
-}
-
-username="$unifi_username"
-password="$unifi_password"
-baseurl="$unifi_baseurl"
-
-unifi_login &>/dev/null
-find_site
-#unifi_list_sites | jq
 unifi_list_devices | jq -r '.data[] | "\(.ip)\t\(.mac)\t\(.name)\t\(.radio_table[0].channel)\t\(.radio_table[1].channel)"'
-#unifi_list_devices | jq -r '.data[].ip'
