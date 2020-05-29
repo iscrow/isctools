@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+RANGE=$(ip_subnet_validate $1)
+
+function help {
+	cat <<-EOF 
+	aruba_scan tries to identify Aruba / HP ProCurve switches on the subnet you specify
+	Usage:
+	    aruba_scan < CIDR notation subnet
+
+	Example:
+	    aruba_scan 192.168.0.0/24
+	
+	EOF
+	exit 1
+}
+
+[ -z "$RANGE" ] && help
+
+nmap -sV -oG - -n -p80 --script=http-headers "$RANGE" | awk '/eHTTP/{print $2}'
