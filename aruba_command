@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 DEVICE=$1
+export ARUBA_COMMAND_TIMEOUT=${ARUBA_COMMAND_TIMEOUT:-30}
+[ "$ARUBA_COMMAND_DEBUG" ] && ARUBA_COMMAND_DEBUG="-d"
+
 ARUBA_COMMAND_USER_LAST=$ARUBA_COMMAND_USER
 
 [[ "$DEVICE" =~ @ ]] && IFS=@ read ARUBA_COMMAND_USER_LAST DEVICE <<< $DEVICE
@@ -54,13 +57,14 @@ fi
 COMMANDS=$'\n'"$(sed -E 's/::/\n/g' <<< $COMMANDS)"
 
 function runCommands {
-	/usr/bin/env expect -c '
-	set timeout 30
+	/usr/bin/env expect $ARUBA_COMMAND_DEBUG -c '
+	set timeout $::env(ARUBA_COMMAND_TIMEOUT)
 	set DEVICE $::env(DEVICE)   
 	set COMMANDS [split $::env(COMMANDS) "\n"]   
 	set USER $::env(ARUBA_COMMAND_USER_LAST)   
 	set PASS $::env(ARUBA_COMMAND_PASS)
-	set PROMPT "^.+# .*$"	
+	#set PROMPT "^.+# .*$"	
+	set PROMPT "^.+(# .*|.* .y/n\.\?.*)$"	
 	
 	log_user 0
 
