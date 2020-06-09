@@ -15,7 +15,11 @@ fi
 
 . aruba_auth
 
-SW_HOSTNAME=$(. aruba_command $SWITCH 'sh runn | inc hostname' | grep hostname | sed -E 's/hostname "([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+SW_HOSTNAME_CFG=$(. aruba_command $SWITCH 'sh runn | inc hostname')
+SW_HOSTNAME=$(echo "$SW_HOSTNAME_CFG" | grep hostname | sed -E 's/hostname "([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+if grep 'Invalid input: |' -q <<< "$SW_HOSTNAME_CFG"; then
+	SW_HOSTNAME=$(. aruba_command $SWITCH 'sh runn '| grep -P '^hostname ' | sed -E 's/hostname "([^"]+)"/\1/g' | tr '[:upper:]' '[:lower:]')
+fi
 
 if [ -z "$SW_HOSTNAME" ]; then
 	echo "${RED}Could not determine hostname for $SWITCH. Exiting.${NC}"
