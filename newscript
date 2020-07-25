@@ -11,15 +11,30 @@ function help() {
 	exit 1
 }
 
+
 [ -z "$NAME" ] && help
 [ -e "$NAME" ] && echo "$NAME already exists. Exiting." && exit 1
 
-cat << 'EOF' > "$NAME"
+cat << 'EOTEMPLATE' > "$NAME"
 #!/usr/bin/env bash
 
 SCRIPT="$(basename "$0")"
 
-EOF
+function help() {
+	cat <<-EOF
+
+		$SCRIPT $_description_of_functionality_
+	
+		Usage example:
+		  $SCRIPT $_example_usage_
+
+	EOF
+	exit 1
+}
+
+[ -z "$*" ] && help
+
+EOTEMPLATE
 
 chmod +x "$NAME"
 $EDITOR "$NAME"
