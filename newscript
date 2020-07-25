@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+NAME="$*"
+SCRIPT="$(basename "$0")"
+
+function help() {
+	echo "$SCRIPT creates a new starter bash script"
+	echo "Usage:"
+	echo "  $SCRIPT script_name"
+	echo
+	exit 1
+}
+
+[ -z "$NAME" ] && help
+[ -e "$NAME" ] && echo "$NAME already exists. Exiting." && exit 1
+
+cat << 'EOF' > "$NAME"
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+EOF
+
+chmod +x "$NAME"
+$EDITOR "$NAME"
