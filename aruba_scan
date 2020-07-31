@@ -17,4 +17,4 @@ function help {
 
 [ -z "$RANGE" ] && help
 
-nmap -sV -oG - -n -p80 --script=http-headers "$RANGE" | awk '/eHTTP/{print $2}'
+nmap -sV -oG - -n -p80 --script=http-headers "$RANGE" 2>/dev/null | awk '/eHTTP/{print $2}'
