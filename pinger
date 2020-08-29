@@ -87,7 +87,7 @@ while true; do
   [ -z "$ip" ] && resolve
   #response=$(ping -W $timeout -w $timeout -s 1472 -c 1 $ip 2>&1)
   #response=$(ping -W $timeout -w $timeout -c 1 $ip 2>&1)
-  response=$(ping -W 10 -c 1 $ip 2>&1)
+  response=$(ping -n -W 10 -c 1 $ip 2>&1)
   errorcount=$(echo "$response" | egrep -c '(ping:|connect:|Unreachable|Unknown|Usage:)')
   miss=$(echo "$response" | grep -c '100% packet loss')
   responsecount=$(echo "$response" | egrep -c 'icmp_seq')
