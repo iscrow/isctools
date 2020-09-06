@@ -1,0 +1,25 @@
+*   Trying 10.95.64.11:80...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Connected to 10.95.64.11 (10.95.64.11) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 10.95.64.11
+> User-Agent: curl/7.71.1
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< Server: eHTTP v2.0
+< Connection: Keep-Alive
+< Content-Type: text/html
+< Content-Length: 124
+< Cache-Control: no-cache
+< X-Frame-Options: SAMEORIGIN
+< Set-Cookie: sessionId=pcAGmifqF2IEnEh2cYjTOLEcQSJxgTPlYoq9CJ5Up4jEwxXmaJ1fYEjlvGO4BTc;path=/; postId=; 
+< X-XSS-Protection: 1
+< X-Content-Type-Options: nosniff
+< Content-Security-Policy: default-src 'self' data: 'unsafe-eval' 'unsafe-inline' 
+< 
+{ [124 bytes data]
+100   124  100   124    0     0   1393      0 --:--:-- --:--:-- --:--:--  1409
+* Connection #0 to host 10.95.64.11 left intact
