@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+CONNECT_TIMEOUT=2
 PROCESSES=256
 SCRIPT="$(basename "$0")"
 
@@ -39,7 +40,7 @@ function cidr_to_ips {
 [ -z $(command -v sipcalc) ] && echo "$SCRIPT requires sipcalc" | colorize red . && exit 1
 
 export -f check_ip
-export CONNECT_TIMEOUT=1
+export CONNECT_TIMEOUT
 
 [ -z "$*" ] && help
 

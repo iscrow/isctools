@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+DEFAULT_KEY_LENGTH=32
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT generates a TOTP key to be used as a shared secret with Google Authenticator / Authy style TOTP tools.
+		The generated TOTP key is also copied to your clipboard if possible.
+	
+		Usage example:
+		  $SCRIPT <key length; default is $DEFAULT_KEY_LENGTH>
+
+	EOF
+	exit 1
+}
+
+[[ ! $1 =~ ^$|^[0-9]+$ ]] && help
+
+KEY_LENGTH=${1:-$DEFAULT_KEY_LENGTH}
+
+KEY=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w $KEY_LENGTH | head -n 1)
+CMD="oathtool -b --totp $KEY"
+echo "    KEY: $KEY"
+echo "Command: $CMD"
+echo "     ID: $($CMD)"
+echo -n "$KEY" | clipboard
+
