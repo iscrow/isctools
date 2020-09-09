@@ -5,7 +5,8 @@ SCRIPT="$(basename "$0")"
 function help() {
 	cat <<-EOF
 
-		$SCRIPT [-t|--timeout <timeout_seconds>] [--processes <processes>]
+		$SCRIPT [-t|--timeout <timeout_seconds>]
+		        [--processes <processes>]
 	
 		Usage example:
 		  $SCRIPT --timeout 4 --processes 32 '/' 192.168.0.0/22
@@ -15,6 +16,4 @@ function help() {
 	exit 1
 }
 
-[ -z "$*" ] && help
-
-http_scan --regex 'Server: eHTTP' $*
+http_scan --https --port 8006 --regex 'pve-api-daemon' $*
