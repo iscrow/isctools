@@ -5,7 +5,7 @@ SCRIPT="$(basename "$0")"
 function help() {
 	cat <<-EOF
 
-		$SCRIPT $_description_of_functionality_
+		$SCRIPT lists disk usage at the current directory
 	
 		Usage example:
 		  $SCRIPT $_example_usage_
@@ -14,5 +14,7 @@ function help() {
 	exit 1
 }
 
-[ -z "$*" ] && help
+grep -Piq -- '--help|-h' <<< $* && help
 
+unalias du &>/dev/null
+du -sh * .* | sort -h
