@@ -16,4 +16,4 @@ function help() {
 
 grep -Piq -- '--help|-h' <<< $* && help
 
-du -sh .[^.]* * | sort -h
+du -sh .[^.]* * 2>&- | sort -h
