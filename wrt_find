@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT [-t|--timeout <timeout_seconds>] [--processes <processes>]
+	
+		Usage example:
+		  $SCRIPT --timeout 4 --processes 32 '/' 192.168.0.0/22
+			$SCRIPT 192.168.1.10 192.168.2.10 192.168.3.0/28
+
+	EOF
+	exit 1
+}
+
+PARAMS=$*
+[ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
+[ -z "$PARAMS" ] && help
+
+http_scan --regex '<title>OpenWrt Administrative Console</title>' $PARAMS
