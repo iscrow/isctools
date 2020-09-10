@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT $_description_of_functionality_
+	
+		Usage example:
+		  $SCRIPT $_example_usage_
+
+	EOF
+	exit 1
+}
+
+[ -z "$*" ] && help
+
