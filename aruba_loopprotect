@@ -33,7 +33,7 @@ ARR_PORTS=($PORTS)
 ARR_NEIGHBORS=()
 
 for p in $PORTS; do
-	CURR_NEIGHBOR=$(grep -P "^\s+$p\s+" <<< "$NEIGHBORS" | tail -n 1 | awk -F'|' '{print $2}')
+	CURR_NEIGHBOR=$(grep -P "^\s+$p\s+" <<< "$NEIGHBORS" | tail -n 1 | awk -F'|' '{print $NF}')
 	for i in "${!ARR_PORTS[@]}"; do
 		if [[ "${ARR_PORTS[$i]}" = "${p}" ]]; then
 			ARR_NEIGHBORS[$i]="$CURR_NEIGHBOR"
