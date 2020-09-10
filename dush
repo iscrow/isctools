@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT lists disk usage at the current directory
+	
+		Usage example:
+		  $SCRIPT $_example_usage_
+
+	EOF
+	exit 1
+}
+
+grep -Piq -- '--help|-h' <<< $* && help
+
+unalias du &>/dev/null
+du -sh * .* | sort -h
