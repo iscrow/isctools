@@ -6,7 +6,8 @@ SCRIPT="$(basename "$0")"
 function help() {
 	cat <<-EOF
 
-		$SCRIPT switch_ips$_description_of_functionality_
+		$SCRIPT [-l|--long] switch_ips
+		  the -l or --long parameter shows full info that not needed most of the time
 	
 		Usage example:
 		  $SCRIPT returns the model of the switch. Usage:
@@ -16,7 +17,26 @@ function help() {
 	return 1 2>&- || exit 1
 }
 
-grep -Piq -- '--help|-h' <<< $* && help
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-l|--long)
+	LONG="yes"
+	shift # past argument
+	;;
+	-h|--help)
+		help
+	;;
+	*)    # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
 
 PARAMS=$*
 [ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
@@ -34,6 +54,7 @@ for SWITCH in $PARAMS; do
 		. aruba_auth
 		MODEL=$(aruba_command $SWITCH "getmib 1.3.6.1.2.1.1.1.0" | grep -Pv '^\s*$' | sed -E 's/^[^=]+ *= *//')
 	fi
+	[ -z "$LONG" ] && MODEL=$(sed -E 's|\(/ws/[^)]+\)\)||g;s|\(Formerly ProCurve\)||g' <<< "$MODEL")
 
 	echo -n "$SWITCH: "
 	[ -n "$MODEL" ] && echo "$MODEL" || echo "Could not determine model"
