@@ -7,7 +7,7 @@ function help() {
 	cat <<-EOF
 
 		$SCRIPT [-l|--long] switch_ips
-		  the -l or --long parameter shows full info that not needed most of the time
+		  -l or --long shows full info that is not needed most of the time
 	
 		Usage example:
 		  $SCRIPT returns the model of the switch. Usage:
