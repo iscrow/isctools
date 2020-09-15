@@ -38,24 +38,22 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-PARAMS=$*
-[ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
-[ -z "$PARAMS" ] && help
+[ -t 0 ] && [ -z "$*" ] && help
 
 SNMP_RO_COMMUNITY="public"
 [ -n $(command -v pktools_vars) ] && . pktools_vars
 
-for SWITCH in $PARAMS; do
+while read SWITCH; do
 	SWITCH=$(ip_validate $SWITCH)
 	[ -z "$SWITCH" ] && echo "$SWITCH: Invalid IP address" >&2 && help
 
 	MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -c$SNMP_RO_COMMUNITY $SWITCH 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
 	if [ -z "$MODEL" ]; then
 		. aruba_auth
-		MODEL=$(aruba_command $SWITCH "getmib 1.3.6.1.2.1.1.1.0" | grep -Pv '^\s*$' | sed -E 's/^[^=]+ *= *//')
+		MODEL=$(aruba_command $SWITCH "getmib 1.3.6.1.2.1.1.1.0" | grep -Pv '^\s*$|^.$' | sed -E 's/^[^=]+ *= *//')
 	fi
 	[ -z "$LONG" ] && MODEL=$(sed -E 's|\(/ws/[^)]+\)\)||g;s|\(Formerly ProCurve\)||g' <<< "$MODEL")
 
 	echo -n "$SWITCH: "
 	[ -n "$MODEL" ] && echo "$MODEL" || echo "Could not determine model"
-done
+done < <([ -n "$*" ] && tr ' ' '\n' <<< $* ; [ ! -t 0 ] && cat)

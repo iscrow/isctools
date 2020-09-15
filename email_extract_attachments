@@ -45,7 +45,7 @@ ripmime -d "$TMP" --paranoid -v -i - < "$ORIG_FILE"
 echo DONE. Files extracted in "$TMP"
 ls -lh "$TMP"
 
-xdg-open "$TMP" &
+#xdg-open "$TMP" &
 show_tips
 cd "$TMP"
 $SHELL
