@@ -18,7 +18,7 @@ function help() {
 		        [-r|--regex <regex>]
 		        [-u|--url_path <url_path>]
 		        [--processes <processes>]
-						[-o|--sort]
+		        [-n|--unsorted]
 	
 		Usage example:
 		  $SCRIPT --https --port 8006 --timeout 4 --regex 'pve-api-daemon' --url_path '/' --processes 32 192.168.0.15
@@ -49,6 +49,8 @@ function cidr_to_ips {
 }
 
 [ -z $(command -v sipcalc) ] && echo "$SCRIPT requires sipcalc" | colorize red . && exit 1
+
+SORT="yes"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
@@ -84,8 +86,8 @@ while [[ $# -gt 0 ]]; do
 		PROTOCOL="https"
 		shift # past argument
 		;;
-		-o|--sort)
-		SORT="YES"
+		-n|--unsorted)
+		SORT=""
 		shift # past argument
 		;;
 		*)    # unknown option
