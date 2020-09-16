@@ -33,9 +33,9 @@ function findVendor() {
 refreshDatabase
 
 for QUERY in $*; do
-	NORMALIZED=$(sed -E 's/[^0-9a-fA-F]//g' <<< "$QUERY")
-	if [[ "$QUERY" =~ ^[0-9a-fA-F:-]+$ ]] && [ ${#NORMALIZED} -ge 6 ]; then
-		findVendor "$QUERY"
+	NORMALIZED=$(sed -E 's/[0-9a-fA-F]{2}([0-9a-fA-F]{2}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{4}\.[0-9a-fA-F]{2})/\1/g;s/[^0-9a-fA-F]//g' <<< "$QUERY")
+	if [[ "$NORMALIZED" =~ ^[0-9a-fA-F.:-]+$ ]] && [ ${#NORMALIZED} -ge 6 ]; then
+		findVendor "$NORMALIZED"
 	else
 		echo "'$QUERY' is not a MAC address/OUI"
 	fi
