@@ -1,40 +1,13 @@
 #!/usr/bin/env bash
 
-
 SCRIPT=$(basename $0)
-TMP="/tmp/$SCRIPT"; mkdir "$TMP" 2>&-
-#TMP=$(mktemp -d /tmp/$SCRIPT.XXXXXXXX)
+#TMP="/tmp/$SCRIPT"; mkdir "$TMP" 2>&-
+TMP=$(mktemp -d /tmp/$SCRIPT.XXXXXXXX)
 
-MSG_FILE="$TMP/msg"
-
-#!/bin/bash
 function finish {
-	[ -d "$TMP" ]             && ( rm "$TMP/*";             rmdir "$TMP"             ) 2>&-
+	[ -d "$TMP" ] && ( rm "$TMP/*"; rmdir "$TMP" ) 2>&-
 }
-
-#trap finish EXIT
-
-function scan {
-	vt scan file "$1"
-}
-
-function vtfound {
-	local SHA256=$1
-	COMPLETED=$(vt analysis $SHA256 --include='status' 2>&- | grep completed -c)
-	[ "$COMPLETED" -gt 0 ] && echo yes
-}
-
-function results {
-	SHA256=$1
-	COMPLETED=$(vtfound)
-	while [ ! "$COMPLETED" ]; do
-		echo "analyzing..."
-		sleep 15
-		COMPLETED=$(vtfound)
-	done
-	echo Matches:
-	vt analysis "$SHA256" --include='**.result'
-}
+trap finish EXIT
 
 echo "Paste email source. ctrl-d when done" | grep -P "ctrl-d|$" --color=auto
 DATA=$(cat)
@@ -44,21 +17,6 @@ ripmime -d "$TMP" --paranoid -v -i - <<< "$DATA"
 OIFS="$IFS"
 IFS=$'\n'
 for FILE in $(find "$TMP" -type f | grep -Pv 'textfile\d+'); do
-	SHA256=$(sha256sum -b "$FILE" | awk '{print $1}')
-	VTURL="https://www.virustotal.com/gui/search/$SHA256"
-	NAME=$(basename "$FILE")
-	COMPLETED=$(vtfound $SHA256)
-	[ "$COMPLETED" ] && echo "$NAME is already known to VirusTotal" && continue
-	echo "Scanning $NAME"
-	scan "$FILE"
-done
-for FILE in $(find "$TMP" -type f | grep -Pv 'textfile\d+'); do
-	SHA256=$(sha256sum -b "$FILE" | awk '{print $1}')
-	VTURL="https://www.virustotal.com/gui/search/$SHA256"
-	NAME=$(basename "$FILE")
-	echo "VirusTotal Analysis: $VTURL"
-	xdg-open "$VTURL"
-	echo "Results for $NAME with sha256 $SHA256" 
-	results "$SHA256"
+	virustotal_scan $FILE
 done
 IFS="$OIFS"

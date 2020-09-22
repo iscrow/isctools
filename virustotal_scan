@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+FIELDS="names,first_submission_date,last_analysis_date,size,tags,type_description,last_analysis_stats.malicious,**.result"
+
+API_FILE="$HOME/.vt.toml"
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT submits one or more files to VirusTotal and shows the results
+	
+		Usage example:
+		  $SCRIPT file1 file2
+
+	EOF
+	exit 1
+}
+
+[ -z "$*" ] && help
+
+function scan {
+	vt scan file "$1" | awk '{print $2}'
+}
+
+function vtfound {
+	local SHA256=$1
+	local FOUND=$(vt file $SHA256 --include='first_submission_date' 2>&- | grep -Pc 'first_submission_date')
+	[ "$FOUND" -gt 0 ] && echo yes
+}
+
+function results {
+	SHA256=$1
+	vt file "$SHA256" --include="$FIELDS"
+}
+
+if [ -z "$(command -v vt)" ]; then 
+	echo "$SCRIPT requires the vt utility from aur/vt-cli or https://github.com/VirusTotal/vt-cli"
+	exit
+fi
+
+if [ ! -s $API_FILE ]; then
+	cat <<-EOF | colorize red .
+
+	You have not configured an API key for vt.
+
+	Please complete the following steps:
+	  * Go to https://virustotal.com
+	  * Sign in or Sign up
+	  * Click on your name (upper right)
+	  * Chose API key to get one
+	  * Run: vt init
+	  * Enter your API key
+
+	EOF
+	exit
+fi
+
+for FILE in $*; do
+	[ -f "$FILE" ] && FILES+=($FILE) || echo "$FILE is not a file"
+done
+
+for FILE in ${FILES[@]}; do
+	SHA256=$(sha256sum -b "$FILE" | awk '{print $1}')
+	VTURL="https://www.virustotal.com/gui/search/$SHA256"
+	NAME=$(basename "$FILE")
+	COMPLETED=$(vtfound $SHA256)
+	if [ "$COMPLETED" ]; then 
+		NAME=$(basename "$FILE")
+		echo -- "--- Results for $NAME: ---" | colorize blue . 
+		results "$SHA256" | colorize red 'malicious: (.*)' yellow "^[^:]+:" yellow '^ +-' green '"[^"]+"' green '[0-9]+$'
+		echo "  URL: \"$VTURL\""| colorize yellow "^[^:]+:" yellow '^ +-' green '"[^"]+"'
+		echo
+		echo
+		#xdg-open "$VTURL"
+		continue
+	fi
+	echo "Scanning $NAME"
+	scan "$FILE"
+done

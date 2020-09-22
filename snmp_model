@@ -1,1 +1,63 @@
-aruba_model
+#!/usr/bin/env bash
+
+SNMP_TIMEOUT=2
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT [-l|--long] [-t|--t <integer>] device_IPs
+		  -l or --long shows full info that is not needed most of the time
+		  -t or --timeout is an integer SNMP timeout in seconds
+	
+		Usage example:
+		  $SCRIPT returns the model of the device. Usage:
+		  $SCRIPT 192.168.3.11 192.168.3.12
+		  $SCRIPT 192.168.4.13 192.168.4.14 --long --timeout 5
+
+	EOF
+	return 1 2>&- || exit 1
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-l|--long)
+	LONG="yes"
+	shift # past argument
+	;;
+	-t|--timeout)
+	shift # past parameter name
+	[[ "$1" =~ [0-9]+ ]] && SNMP_TIMEOUT=$1
+	shift # past argument
+	;;
+	-h|--help)
+		help
+	;;
+	"")
+	shift # past empty argument
+	;;
+	*)    # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+[ -t 0 ] && [ -z "$*" ] && help
+
+SNMP_RO_COMMUNITY="public"
+[ -n $(command -v pktools_vars) ] && . pktools_vars
+
+while read DEVICE; do
+	MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -c$SNMP_RO_COMMUNITY $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	[ -z "$MODEL" ] && [ "$SNMP_RO_COMMUNITY" != "public" ] && MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -cpublic $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	[ -z "$LONG" ] && MODEL=$(sed -E 's|\(/ws/[^)]+\)\)||g;s|\(Formerly ProCurve\)||g' <<< "$MODEL")
+
+	echo -n "$DEVICE: "
+	[ -n "$MODEL" ] && echo "$MODEL" || echo "Could not determine model"
+done < <([ -n "$*" ] && tr ' ' '\n' <<< $* ; [ ! -t 0 ] && cat)

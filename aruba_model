@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-SNMP_TIMEOUT=2
 SCRIPT="$(basename "$0")"
 
 function help() {
 	cat <<-EOF
 
-		$SCRIPT [-l|--long] switch_ips
+		$SCRIPT [-l|--long] switch_IPs
 		  -l or --long shows full info that is not needed most of the time
 	
 		Usage example:
@@ -24,7 +23,7 @@ key="$1"
 
 case $key in
 	-l|--long)
-	LONG="yes"
+	LONG="--long"
 	shift # past argument
 	;;
 	-h|--help)
@@ -40,11 +39,8 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 [ -t 0 ] && [ -z "$*" ] && help
 
-SNMP_RO_COMMUNITY="public"
-[ -n $(command -v pktools_vars) ] && . pktools_vars
-
 while read SWITCH; do
-	MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -c$SNMP_RO_COMMUNITY $SWITCH 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	MODEL=$(snmp_model "$LONG" $SWITCH)
 	if [ -z "$MODEL" ]; then
 		. aruba_auth
 		MODEL=$(aruba_command $SWITCH "getmib 1.3.6.1.2.1.1.1.0" | grep -Pv '^\s*$|^.$' | sed -E 's/^[^=]+ *= *//')
