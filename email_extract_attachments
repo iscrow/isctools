@@ -6,8 +6,7 @@ OLD="/tmp/old_$SCRIPT"
 TMP="/tmp/$SCRIPT-$(date "+%Y-%m-%d--%H-%M-%S")"
 
 function finish {
-	[ -d "$OLD" ] || mkdir "$OLD"
-	[ -d "$OLD" ] && [ -d "$TMP" ] && mv "$TMP" "$OLD"
+	[ -d "$TMP" ] && rm -rf "$TMP"
 }
 
 function show_tips {
