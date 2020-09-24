@@ -124,7 +124,7 @@ Your voice is magnificent.
 You’re like a breath of fresh air.
 You’re gorgeous — and that’s the least interesting thing about you, too.
 Your creative potential seems limitless.
-You’re the coolest person I know. And I consider myself bet friends with like all celebrities, so. . . .
+You’re the coolest person I know. And I consider myself bet friends with like all celebrities, so...
 Actions speak louder than words, and yours tell an incredible story.
 Somehow you make time stop and fly at the same time.
 You seem to really know who you are.
@@ -134,7 +134,17 @@ I bet you do the crossword puzzle in ink.
 If you were a scented candle they’d call it Perfectly Imperfect (and it would smell like summer).
 There’s ordinary, and then there’s you.
 You’re even better than a unicorn, because you’re real.
-Has anyone ever told you that you have great posture?"
+Has anyone ever told you that you have great posture?
+I Don’t Have A Favorite Color, It’s Pretty Much Whatever You Are Wearing.
+If You Knew How Much I Think About You, I Would Be Very Embarrassed.
+You Might Be The Primary Reason For Global Warming.
+You Could Never Be Ice Cream. Because You’re So Hot. And A Person.
+Even if you were cloned, you'd still be one of a kind. And the better looking one.
+You're not someone I pretend to not see in public.
+I can never remember my dreams, but I assume you are always in them.
+I don't know if sarcasm is a skill, but you've certainly mastered it.
+Are you a beaver? ... because damn."
+
 
 insults="Why don't you act like a human being or don't you do impersonations?
 You're NUMBER ONE in my book.  My book is called \"Creeps I Have Known\".
@@ -186,7 +196,7 @@ Ordinarily people live and learn. You just live.
 I had prepared for a battle of wits but I see you came unarmed.
 Calling you an idiot would be an insult to all stupid people.
 You have the perfect face for radio.
-"
+Thank you for making me feel better about my own problems."
 
 function random() {
   if [ $(which shuf 2>/dev/null) ]; then
