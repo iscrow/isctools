@@ -57,11 +57,11 @@ if [ ! -s $API_FILE ]; then
 	exit
 fi
 
-for FILE in $*; do
-	[ -f "$FILE" ] && FILES+=($FILE) || echo "$FILE is not a file"
+for FILE in "$@"; do
+	[ -f "$FILE" ] && FILES+=("$FILE") || echo "$FILE is not a file"
 done
 
-for FILE in ${FILES[@]}; do
+for FILE in "${FILES[@]}"; do
 	SHA256=$(sha256sum -b "$FILE" | awk '{print $1}')
 	VTURL="https://www.virustotal.com/gui/search/$SHA256"
 	NAME=$(basename "$FILE")
