@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+SWITCH=$1
+UPLINK_REGEX=' HP | ProCurve | Cisco IOS | Aruba | ProSafe '
+
+source colors.sh
+
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+ 	echo "Please don't source this script!"
+	return 1
+fi
+
+if [ -z "$SWITCH" ]; then
+	echo "aruba_uplink_config determines the uplink and edge ports and configures loop protect, STP features, dhcp snooping trust, etc."
+	echo
+	echo "Usage:"
+	echo "aruba_uplink_config switch_ip"
+	echo "aruba_uplink_config 192.168.3.12"
+	return 1 2>&- || exit
+fi
+
+source aruba_auth
+
+NEIGHBORS=$(aruba_command $SWITCH sh lldp info remote-device :: sh cdp neighbors | grep -P '[0-9]')
+NEIGHBOR_PORTS=$(echo "$NEIGHBORS" | awk '{print $1}' |  sort -V -u)
+PORTS=$(aruba_command $SWITCH sh int brief | grep -P '[0-9]' | awk '{print $1}')
+
+echo "CDP/LLDP Neighbors:"
+echo "$NEIGHBORS" | colorize green "\|(${UPLINK_REGEX})"
+UPLINKS=$(grep -P "\|($UPLINK_REGEX)" <<< "$NEIGHBORS" | awk '{print $1}' | sort -Vu)
+
+ARR_PORTS=($PORTS)
+ARR_NEIGHBORS=()
+
+for p in $PORTS; do
+	CURR_NEIGHBOR=$(grep -P "^\s+$p\s+" <<< "$NEIGHBORS" | tail -n 1 | awk -F'|' '{print $NF}')
+	for i in "${!ARR_PORTS[@]}"; do
+		if [[ "${ARR_PORTS[$i]}" = "${p}" ]]; then
+			ARR_NEIGHBORS[$i]="$CURR_NEIGHBOR"
+			grep -Pi "$UPLINK_REGEX" <<< "$CURR_NEIGHBOR" &>/dev/null && ARR_CHOICES[$i]="+"
+		fi
+	done
+done
+
+menu() {
+	echo
+	echo "Switch ports:"
+	for i in ${!ARR_PORTS[@]}; do
+		printf "%3d%s) %s\n" $((i+1)) "${ARR_CHOICES[i]:- }" "${ARR_PORTS[i]}: ${ARR_NEIGHBORS[i]}" | colorize green "${UPLINK_REGEX}" yellow '^\s+[0-9]+\s\)' green '^\s+[0-9]+\+\)'
+
+	done
+	if [[ "$msg" ]]; then echo "$msg"; fi
+}
+
+choose() {
+	prompt="Check an option (again to uncheck, ENTER when done): "
+	while menu && read -rp "$prompt" num && [[ "$num" ]]; do
+		[[ "$num" != *[![:digit:]]* ]] &&
+		(( num > 0 && num <= ${#ARR_PORTS[@]} )) ||
+		{ msg="Invalid option: $num"; continue; }
+		((num--)); msg="${ARR_PORTS[num]} was ${ARR_CHOICES[num]:+un}checked"
+		[[ "${ARR_CHOICES[num]}" ]] && ARR_CHOICES[num]="" || ARR_CHOICES[num]="+"
+	done
+
+	for i in ${!ARR_PORTS[@]}; do
+		if [[ "${ARR_CHOICES[i]}" ]]; then
+			[ "$UPLINK_PORTS" ] && UPLINK_PORTS+=","
+			UPLINK_PORTS+="${ARR_PORTS[i]}"
+		else
+			[ "$EDGE_PORTS" ] && EDGE_PORTS+=","
+			EDGE_PORTS+="${ARR_PORTS[i]}"
+		fi
+	done
+
+	echo "Selected Uplink ports: $UPLINK_PORTS" | colorize green "."
+	echo "  Selected Edge ports: $EDGE_PORTS" | colorize yellow "."
+}
+
+loop_protect() {
+	CMD="config term::loop-protect disable-timer 60::"
+	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-disable::"
+	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-recv-dis"
+
+	if [ "$UPLINK_PORTS" ]; then
+		CMD+="::loop-protect ${UPLINK_PORTS} receiver-action no-disable"
+		CMD+="::no spanning-tree ${UPLINK_PORTS} root-guard tcn-guard bpdu-protection"
+		CMD+="::int ${UPLINK_PORTS} dhcp-snooping trust"
+	fi
+	CMD+="::end::show loop-protect"
+	echo
+	echo "Commands:"
+	echo "$CMD" | sed -E 's/::/\n/g' | colorize \
+		green "${UPLINK_PORTS}" \
+		yellow "${EDGE_PORTS}"
+	
+	GO=""
+	while [[ ! "$GO" =~ yes|no ]]; do
+		echo -n "Apply? (yes/no): " | colorize green '.'
+		read GO
+	done
+
+	[ "$GO" == "yes" ] && aruba_command "$SWITCH" "$CMD" | colorize green ".*no-disable.*" yellow ".*send-.*"
+}
+
+save() {
+	GO=""
+	while [[ ! "$GO" =~ yes|no ]]; do
+		echo -n "Save and backup config? (yes/no): "
+		read GO
+	done
+	[ "$GO" == "yes" ] && aruba_save "$SWITCH"
+}
+
+choose
+loop_protect
+ping "$SWITCH" -c 4
+echo
+save
+
