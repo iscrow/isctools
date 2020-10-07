@@ -71,17 +71,21 @@ for FILE in "${FILES[@]}"; do
 		NAME=$(basename "$FILE")
 		results "$SHA256" | colorize red 'malicious: (.*)' yellow "^[^:]+:" yellow '^ +-' green '"[^"]+"' green '[0-9]+$'
 		echo "  URL: \"$VTURL\""| colorize yellow "^[^:]+:" yellow '^ +-' green '"[^"]+"'
+		echo "  (Should be copied to your clipboard)" | colorize green .
 		echo
 		echo
+		clipboard "$VTURL"
 		#xdg-open "$VTURL"
 		continue
 	fi
 	echo "Scanning $NAME"
 	scan "$FILE" >&-
+	clipboard "$VTURL"
 	(
 	echo "$NAME SHA256: $SHA256 Submitted to VirusTotal."
 	echo "To check the results re-run this command later or go to:"
 	echo "  $VTURL"
+	echo "  (Should be copied to your clipboard)"
 	) | colorize green .
 	echo
 	echo

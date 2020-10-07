@@ -27,7 +27,7 @@ function findVendor() {
 	local MAC="$*"
 	local OUI=$(echo "${MAC^^}" | sed -E 's/[^0-9A-F]//g;s/^(..)(..)(..).*/\1:\2:\3/g')
 	local VENDOR=$(grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
-	printf "%-18s  %-6s  %s\n" "$MAC" "$OUI" "$VENDOR"
+	printf "%-18s\t%-6s\t%s\n" "$MAC" "$OUI" "$VENDOR"
 }
 
 refreshDatabase

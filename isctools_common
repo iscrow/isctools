@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+PROCURVE_MODEL_FILTER="s|\(/ws/[^)]+\)\)||g;s|\(Formerly ProCurve\)||g"
+CISCO_MODEL_FILTER="s| Technical Support: .*||g"
+
