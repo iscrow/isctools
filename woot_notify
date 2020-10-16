@@ -25,9 +25,18 @@ urls = [
 ]
 
 config = ConfigParser()
-config.read(Path.home() / '.pushover.ini')
-token = config.get('PUSHOVER', 'token')
-user = config.get('PUSHOVER', 'user')
+try:
+    config.read(Path.home() / '.pushover.ini')
+    token = config.get('PUSHOVER', 'token')
+    user = config.get('PUSHOVER', 'user')
+except:
+    print('Ensure you have a ~/.pushover.ini file with the following format:')
+    print('[PUSHOVER]')
+    print('user = <pushover user id>')
+    print('token = <pushover token>')
+    sys.exit()
+
+
 
 def check_url(url, regex):
     html = get(url).content
