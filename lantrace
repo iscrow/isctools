@@ -10,14 +10,14 @@ function aruba_hop() {
 	local MAC=$2
 	local IP=$3
 	local SWITCHHOSTNAME=$4
-	local MACTABLE=$(aruba_command $SWITCHIP sh mac-address $MAC | grep -P '^\s+\d+\s+\d+\s*$')
+	local MACTABLE=$(aruba_command $SWITCHIP sh mac-address $MAC | grep -P '^\s+\d+\s+\d*\s*$')
 	log "$MACTABLE"
 	local PORT
 	local VLAN
 	read -r PORT VLAN <<< "$MACTABLE"
 	if [ -z "$PORT" ]; then
 		echo
-		echo "Reached $SWITCHHOSTNAME - $SWITCHIP and there's not record for MAC $MAC ($IP)" >&2
+		echo "Reached $SWITCHHOSTNAME - $SWITCHIP and there's no record for MAC $MAC ($IP)" >&2
 		echo "Giving Up..." >&2
 		exit 2
 	fi
