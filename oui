@@ -25,9 +25,21 @@ function refreshDatabase() {
 
 function findVendor() {
 	local MAC="$*"
-	local OUI=$(echo "${MAC^^}" | sed -E 's/[^0-9A-F]//g;s/^(..)(..)(..).*/\1:\2:\3/g')
-	local VENDOR=$(grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
-	printf "%-18s\t%-6s\t%s\n" "$MAC" "$OUI" "$VENDOR"
+	local MAC=$(echo "${MAC^^}" | sed -E 's/[^0-9A-F]//g;s/(..)/\1:/g;s/:$//g')
+	for MASKBYTES in 8 10 13; do
+		LASTOUI=${OUI:-$MAC}
+		OUI="${MAC:0:$MASKBYTES}"
+		VENDORS=$(grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
+		LASTMATCHES=${MATCHES:-0}
+		MATCHES=$(echo -n "$VENDORS" | grep -c '^')
+		[ "$MATCHES" -eq 0 ] && break
+		VENDOR="${VENDORS}"
+		LASTMATCHES=$MATCHES
+		LASTOUI=$OUI
+	done
+	[ $LASTMATCHES -gt 1 ] && [ ${#MAC} -lt 17 ] && VENDOR="ERROR: Got more than one result. Try with the full MAC address"
+	[ $LASTMATCHES -eq 0 ] && VENDOR="UNKNOWN"
+	printf "%-18s\t%-6s\t%s\n" "$MAC" "$LASTOUI" "$VENDOR"
 }
 
 refreshDatabase
@@ -39,7 +51,6 @@ for QUERY in $*; do
 	else
 		echo "'$QUERY' is not a MAC address/OUI"
 	fi
-
 done
 
 [ -z "$*" ] && usage

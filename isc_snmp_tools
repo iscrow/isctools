@@ -1,0 +1,233 @@
+#! /bin/env bash
+#router=$1
+#ip=$2
+IP=$1
+pr_max_length=29826161 #The highest number that the pr command takes as a --length parameter
+
+oidIFIndexToName=.1.3.6.1.2.1.2.2.1.2
+oidIPToIFIndex=.1.3.6.1.2.1.4.20.1.2
+oidARPTable=.1.3.6.1.2.1.3.1.1.2
+oidLLDPRemEntry=.1.0.8802.1.1.2.1.4.1.1
+oidLLDPRemManAddrEntry=.1.0.8802.1.1.2.1.4.2.1
+oidMACAddressTable=.1.3.6.1.2.1.17.4.3.1.2
+
+NA="" # Not Available String
+
+SNMP_RO_COMMUNITY="public"
+PROCURVE_MODEL_FILTER="s|||g"
+CISCO_MODEL_FILTER="s|||g"
+[ -n $(command -v pktools_vars) ]    && source pktools_vars
+[ -n $(command -v isctools_common) ] && source isctools_common
+
+function fixmac() {
+	cat | sed -E 's/"?([0-9A-F][0-9A-F]) ([0-9A-F][0-9A-F]) ([0-9A-F][0-9A-F]) ([0-9A-F][0-9A-F]) ([0-9A-F][0-9A-F]) ([0-9A-F][0-9A-F]) *"?/\1:\2:\3:\4:\5:\6/g'
+}
+
+function deoid() {
+	local BASE=$1
+ 	if [ -z "$BASE" ]; then
+		PATTERN='s/\(\.[0-9]\+\)\+ = //g'
+	else
+		local ESCAPED=$(sed -E 's|\.|\\.|g' <<< "$BASE")
+		PATTERN="s/$ESCAPED//g"
+	fi
+	# Strips oid numbers from data. 1.2.3 = 9 is changed to 9
+  cat | sed -e $PATTERN
+}
+
+function trim() {
+  # Remves spaces from the end of values
+  cat | sed -e 's/\ "$/"/g'
+}
+
+function dequote() {
+	# Removes " and ' around values
+	cat | sed -E "s/^([^ ]+ = )[\"'](.*)[\"']\s*/\1\2/g"
+}
+
+function dequote_everywhere() {
+	# Removes quotes anywhere in a string
+	cat | tr -d "'" | tr -d '"'
+}
+
+function w() {
+	#  -O OUTOPTS            Toggle various defaults controlling output display:
+	#0:  print leading 0 for single-digit hex characters
+	#a:  print all strings in ascii format
+	#b:  do not break OID indexes down
+	#e:  print enums numerically
+	#E:  escape quotes in string indices
+	#f:  print full OIDs on output
+	#n:  print OIDs numerically
+	#q:  quick print for easier parsing
+	#Q:  quick print with equal-signs
+	#s:  print only last symbolic element of OID
+	#S:  print MIB module-id plus last element
+	#t:  print timeticks unparsed as numeric integers
+	#T:  print human-readable text along with hex strings
+	#u:  print OIDs using UCD-style prefix suppression
+	#U:  don't print units
+	#v:  print values only (not OID = value)
+	#x:  print all strings in hex format
+	#X:  extended index format
+	snmpbulkwalk -v2c -c$SNMP_RO_COMMUNITY $1 $2 -OQn$3 | tr "\n" "\t" | sed -e "s/\t\./\n./g" -e "s/\t/ /g" | trim | dequote | fixmac
+}
+
+function tablify() {
+	# Poor man's snmp table parsing.
+	# Takes w function output and converts it to a table. It uses the variation of
+	# a particular number in the OID to determine the number of columns in the data
+
+	# If you don't specify a parameter it searches for the first id in the oid that varies
+	# and converts each variation in a column
+
+	# Alternatively you can specify the index of the id in the oid and each variation of that
+	# id will be a column
+
+	# OK yes I know about the snmptable command but it depends on MIBs being installed
+	# to know how to parse tables. This approach doesn't rely on any MIBs being installed.
+
+	# Store stdin in a variable
+	data=$(cat)
+
+	if [ $# -eq 0 ] || [ "$1" -eq 0 ]; then
+		oidlen=$(($(echo "$data" | head -n1 | sed -e 's/\ =\ .*//g' -e 's/\./ /g' | wc --words)+1))
+		oids=$(echo "$data" | sed -e 's/\ =\ .*//g')
+		for i in $(seq $oidlen); do
+			variations=$(echo "$oids" | cut -d\. -f$i | sort -u | wc -l)
+			if [ "$variations" -gt 1 ]; then
+				columns=$variations
+				break
+			fi
+		done
+	else
+		# Calculate the number of columns based on the variations in OID at ID position $1
+		columns=$(echo "$data" | cut -d\. -f$(($1+1)) | sort -u | wc -l)
+	fi
+	
+	#if [ "$columns" -lt 2 ]; then
+	#fi
+	echo columns $columns	
+
+	# Reshape single column data to the calculated number of columns
+	echo "$data" | pr -TJs --length $pr_max_length --columns $columns
+}
+
+function getIFIndices() {
+	local INDEX
+	local IFNAME
+
+	while read -r INDEX IFNAME; do
+		IFINDEX[$INDEX]="$IFNAME"
+	done < <(w $1 $oidIFIndexToName | deoid $oidIFIndexToName. | tr -d '=')
+}
+
+function getLLDP() {
+	local IP=$1
+
+	declare COLUMNS=(
+		[4]="ChassisSubtype"
+		[5]="ChassisID"
+		[6]="PortSubtype"
+		[7]="PortID"
+		[8]="PortDesc"
+		[9]="SysName"
+		[10]="SysDesc"
+		[11]="CapSupported"
+		[12]="CapEnabled"
+		[13]="IPAddr"
+	)
+
+	declare -A LLDP
+
+	local SNMP_ADDR_FLTR='s/^4\./13./g;s/^(13\.0\.[0-9]+\.[0-9]+)\.[0-9]+\.[0-9]+\.([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) = [0-9]+$/\1 = \2/g'
+	local SNMP_PEER_DATA=$(w $IP $oidLLDPRemEntry | deoid $oidLLDPRemEntry.)
+	local SNMP_ADDR_DATA=$(w $IP $oidLLDPRemManAddrEntry | grep -a "^$oidLLDPRemManAddrEntry.4" | deoid $oidLLDPRemManAddrEntry. | sed -E "$SNMP_ADDR_FLTR")
+	local      SNMP_DATA="$SNMP_PEER_DATA"$'\n'"$SNMP_ADDR_DATA"
+
+	[ -z "SNMP_DATA" ] && return
+
+	while IFS=. read -r COL ZERO INDEX VALUE; do
+		SUBINDEX=$(cut -d\  -f1 <<< "$VALUE")
+		VALUE=$(sed -E "s/[0-9]+ = //g;s/'//g" <<< "$VALUE")
+		[ "$COL" -eq 10 ] && VALUE="$(sed -E "$PROCURVE_MODEL_FILTER;$CISCO_MODEL_FILTER" <<< "$VALUE")"
+		IFNAME=${IFINDEX[$INDEX]}
+		VALNAME=${COLUMNS[$COL]}
+		[ -z "${LLDP[$INDEX.$SUBINDEX]}" ] && LLDP[$INDEX.$SUBINDEX]="[IFName]='$IFNAME' "
+		LLDP[$INDEX.$SUBINDEX]+="[$VALNAME]='$VALUE' "
+	done <<< "${SNMP_DATA}"
+	declare -A LLDP_RECORD=()
+	
+	OUTPUT="$(( printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" Device IFName SysName IPAddr PortID PortDesc SysDesc
+
+	for INDEX in ${!LLDP[@]}; do
+		eval LLDP_RECORD=(${LLDP[$INDEX]})
+#		for ITEM in ${!LLDP_RECORD[@]}; do
+#			[ "$ITEM" = "SysDesc" ] && LLDP_RECORD[$ITEM]=$(sed -E "$PROCURVE_MODEL_FILTER" <<< "${LLDP_RECORD[$ITEM]}")
+#			echo "$ITEM: ${LLDP_RECORD[$ITEM]}"
+#		done
+		
+		printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+			$IP \
+			"${LLDP_RECORD[IFName]:-$NA}" \
+			"${LLDP_RECORD[SysName]:-$NA}" \
+			"${LLDP_RECORD[IPAddr]:-$NA}" \
+			"${LLDP_RECORD[PortID]:-$NA}" \
+			"${LLDP_RECORD[PortDesc]:-$NA}" \
+			"${LLDP_RECORD[SysDesc]:-$NA}" \
+
+		done | sort -V -k3,3 ) | column -t -s$'\t' -o$'\t')"
+		# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
+
+		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
+		echo "$OUTPUT" | tail +2
+}
+
+function getMACAddressTable() {
+	local IP=$1
+	local DATA
+	declare -A OUIS=()
+	OUTPUT="$(( printf "%s\t%s\t%s\t%s\n" Device MACAddress IFName Description
+	while read -r RAWMAC EQUALS INDEX; do
+		IFACE="${IFINDEX[$INDEX]:-none}"
+		RAWMAC=$(tr '.' ' ' <<< $RAWMAC)
+		MAC=$(printf '%02x:%02x:%02x:%02x:%02x:%02x' $RAWMAC)
+		OUI=$(cut -d: -f1-3 <<< $MAC)
+		MA_L=${MAC:0:8}
+		MA_M=${MAC:0:10}
+		MA_S=${MAC:0:13}
+		DEV=${OUIS[$MA_S]}
+		[ -n "$DEV" ] && echo $MA_S
+		[ -z "$DEV" ] && DEV=${OUIS[$MA_M]}
+		[ -z "$DEV" ] && DEV=${OUIS[$MA_L]}
+		if [ -z "$DEV" ]; then
+			IFS=$'\t' read -r XMAC OUI DEV <<<$(oui $MAC)
+			OUIS[${OUI,,}]="$DEV"
+		fi
+		printf "%s\t%s\t%s\t%s\n" "$IP" "$MAC" "$IFACE" "$DEV"
+
+
+	done < <(w $IP $oidMACAddressTable | deoid $oidMACAddressTable.) | sort -k2,2 ) | column -t -s$'\t' -o$'\t')"
+	# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
+
+		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
+		echo "$OUTPUT" | tail +2
+}
+
+declare -A IFINDEX
+
+getIFIndices $IP
+
+getMACAddressTable $IP
+#getLLDP $IP
+
+#ifIndices=($(w $router $oidIFIndex vx | sort -g -u))
+
+#echo ${ifIndices[@]}
+
+#mac=$(
+#for index in "${ifIndices[@]}"; do
+#	w $router $oidMACTable.$index.1.$ip 
+#done | grep '"'
+#)
+#echo "$mac"
