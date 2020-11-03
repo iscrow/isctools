@@ -1,6 +1,5 @@
 #! /bin/env bash
-#router=$1
-#ip=$2
+SCRIPT=$(basename "$0")
 IP=$1
 pr_max_length=29826161 #The highest number that the pr command takes as a --length parameter
 
@@ -180,7 +179,7 @@ function getLLDP() {
 		# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
 
 		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
-		echo "$OUTPUT" | tail +2
+		echo "$OUTPUT" | tail +2 | sort -V -k2,2
 }
 
 function getMACAddressTable() {
@@ -211,23 +210,14 @@ function getMACAddressTable() {
 	# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
 
 		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
-		echo "$OUTPUT" | tail +2
+		echo "$OUTPUT" | tail +2 | sort -V -k3,3
 }
 
 declare -A IFINDEX
 
 getIFIndices $IP
 
-getMACAddressTable $IP
-#getLLDP $IP
 
-#ifIndices=($(w $router $oidIFIndex vx | sort -g -u))
+[ "$SCRIPT" == "snmp-mac-address-table" ] && getMACAddressTable $IP
+[ "$SCRIPT" == "snmp-lldp" ] && getLLDP $IP
 
-#echo ${ifIndices[@]}
-
-#mac=$(
-#for index in "${ifIndices[@]}"; do
-#	w $router $oidMACTable.$index.1.$ip 
-#done | grep '"'
-#)
-#echo "$mac"
