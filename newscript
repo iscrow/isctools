@@ -3,6 +3,10 @@
 NAME="$*"
 SCRIPT="$(basename "$0")"
 
+[ -z "$EDITOR" ] && command -v vim >&- && EDITOR=vim
+[ -z "$EDITOR" ] && command -v vi >&- && EDITOR=vi
+[ -z "$EDITOR" ] && command -v nano >&- && EDITOR=nano
+
 function help() {
 	echo "$SCRIPT creates a new starter bash script"
 	echo "Usage:"
