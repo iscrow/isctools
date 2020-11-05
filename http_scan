@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
-CONNECT_TIMEOUT=2
+CONNECT_TIMEOUT=5
 PROCESSES=256
 SCRIPT="$(basename "$0")"
 
 PROTOCOL="http"
 REGEX="."
 URL_PATH="/"
-
 
 function help() {
 	cat <<-EOF
