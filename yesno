@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT asks a yes/no question and returrns error code 0 on yes and 1 on no
+	
+		Usage example:
+		  $SCRIPT "Continue?"
+
+	EOF
+	exit 1
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters 
+
+QUESTION="${*%\?}"
+[ -z "$QUESTION" ] && help
+
+GO=""
+while [[ ! "$GO" =~ yes|no ]]; do
+	echo -n "$QUESTION? (yes/no): "
+	read GO
+done
+[ "$GO" == "yes" ] && exit 0 && exit 1
+

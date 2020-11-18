@@ -24,6 +24,7 @@ source aruba_auth
 NEIGHBORS=$(aruba_command $SWITCH sh lldp info remote-device :: sh cdp neighbors | grep -P '[0-9]')
 NEIGHBOR_PORTS=$(echo "$NEIGHBORS" | awk '{print $1}' |  sort -V -u)
 PORTS=$(aruba_command $SWITCH sh int brief | grep -P '[0-9]' | awk '{print $1}')
+VLANS=$(aruba_command $SWITCH sh vlans | grep -P '^\s*[0-9]' | awk '{print $1}' | grep -Pv '^1$' | tr '\n' ',' | sed -E 's/,$//g')
 
 echo "CDP/LLDP Neighbors:"
 echo "$NEIGHBORS" | colorize green "\|(${UPLINK_REGEX})"
@@ -76,7 +77,7 @@ choose() {
 	echo "  Selected Edge ports: $EDGE_PORTS" | colorize yellow "."
 }
 
-loop_protect() {
+apply_config() {
 	CMD="config term::loop-protect disable-timer 60::"
 	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-disable::"
 	CMD+="loop-protect ${EDGE_PORTS} receiver-action send-recv-dis"
@@ -85,6 +86,7 @@ loop_protect() {
 		CMD+="::loop-protect ${UPLINK_PORTS} receiver-action no-disable"
 		CMD+="::no spanning-tree ${UPLINK_PORTS} root-guard tcn-guard bpdu-protection"
 		CMD+="::int ${UPLINK_PORTS} dhcp-snooping trust"
+		CMD+="::int ${UPLINK_PORTS} tagged vlan $VLANS"
 	fi
 	CMD+="::end::show loop-protect"
 	echo
@@ -112,7 +114,7 @@ save() {
 }
 
 choose
-loop_protect
+apply_config
 ping "$SWITCH" -c 4
 echo
 save

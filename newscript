@@ -36,6 +36,11 @@ function help() {
 	exit 1
 }
 
+function on_exit() {
+	# Your cleanup code here
+}
+trap on_exit EXIT
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do

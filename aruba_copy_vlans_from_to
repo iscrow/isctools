@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+CACHE_TIMEOUT_SEC=60
+CACHE_DIR="/tmp"
+CACHE_PLACEHOLDER="pending"
+CACHE_TIEBREAKER_SLEEP=$(bc -l <<< "scale=4 ; ${RANDOM}/32767")
+CACHE_MASTER=""
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT Copies vlan definitions from one switch to another. It does not remove any vlans on the target switch. Copy only. 
+	
+		Usage example:
+		  $SCRIPT SOURCE_SWITCH DESTINATION_SWITCH
+
+	EOF
+	exit 1
+}
+
+function on_exit() {
+	[ -n "$CACHE_MASTER" ] && [ -f "$CACHE_FILE" ] && rm "$CACHE_FILE" 2>&-
+}
+trap on_exit EXIT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+source aruba_auth
+
+SRC=$1
+DST=$2
+[ -z "$SRC" ] && help
+[ -z "$DST" ] && help
+
+CMD=""
+
+CACHE_FILE="$CACHE_DIR/aruba_copy_vlan.$SRC.txt"
+
+function get_src_vlans() {
+	echo "Obtaining source VLANs from switch $SRC..."
+	echo "$CACHE_PLACEHOLDER" > "$CACHE_FILE" && CACHE_MASTER=yes
+	SRC_VLANS=$(aruba_command $SRC sh vlans | grep -P '^\s*\d' | grep -Pv '^\s*1\s+DEFAULT_VLAN\s+' | cut -f1 -d\|)
+	echo "$SRC_VLANS" > "$CACHE_FILE" 
+}
+
+function get_vlans() {
+	sleep $CACHE_TIEBREAKER_SLEEP
+	echo "Checking cache"
+	if [ -z "$(find "$CACHE_FILE" -newermt "-$CACHE_TIMEOUT_SEC seconds" 2>&-)" ]; then
+		get_src_vlans
+	else
+		echo -n "Obtaining source VLANs from cache file "
+		for CACHE_WAIT in $(seq $CACHE_TIMEOUT_SEC); do
+			SRC_VLANS="$(<$CACHE_FILE)"
+			[ ! "$SRC_VLANS" == "$CACHE_PLACEHOLDER" ] && continue
+			sleep 1
+			echo -n .
+		done
+		echo
+		[ "$SRC_VLANS" == "$CACHE_PLACEHOLDER" ] && echo "Cache wait timeout" && get_src_vlans
+	fi
+
+	echo "VLANs to copy:"
+	echo "$SRC_VLANS"
+
+	VLAN_COUNT=$(wc -l <<< "$SRC_VLANS")
+	
+	[ "$VLAN_COUNT" -eq 0 ] && echo "No source VLANs found. Exiting..." && exit 3
+
+	CMD="configure terminal::"
+	while read LINE; do
+		VLAN_ID=$(  sed -E 's/^\s*([0-9]+)\s+(.*)\s*$/\1/g' <<< $LINE)
+		VLAN_NAME=$(sed -E 's/^\s*([0-9]+)\s+(.*)\s*$/\2/g' <<< $LINE)
+		CMD+="vlan $VLAN_ID name '$VLAN_NAME'::"
+	done <<< "$SRC_VLANS"
+	CMD+="end"
+
+	echo "Commands to be issued on $DST:"
+	echo "$CMD" | sed -E "s/::/\n/g"
+}
+
+function put_vlans() {
+	yesno "Apply VLANs to $DST?" && echo "Configuring VLANs on $DST" && aruba_command $DST "$CMD" || exit 2
+}
+
+save() {
+	yesno "Save and backup config on $DST?" && aruba_save "$DST" || exit 2
+}
+
+echo "Retrieving original config from destination switch $DST"
+DST_CFG_BEFORE="$(aruba_command $DST show running-config)"
+[ -z "$DST_CFG_BEFORE" ] && echo "Could not obtain config from $DST. Exiting!" && exit 1
+get_vlans
+put_vlans
+ping "$DST" -c 4
+echo "Retrieving altered config from destination switch $DST"
+DST_CFG_AFTER="$(aruba_command $DST show running-config)"
+[ -z "$DST_CFG_BEFORE" ] && echo "Could not obtain config from $DST. Exiting!" && exit 1
+
+echo
+echo "Changes made to $DST:"
+diff <(echo "$DST_CFG_BEFORE") <(echo "$DST_CFG_AFTER") --color=auto
+save
+
