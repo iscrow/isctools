@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+THISSCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$THISSCRIPT checks to see if the provided commands are available and if not advises the user that they're needed
+	
+		Usage example:
+		  $THISSCRIPT netcat gawk
+
+	EOF
+	exit 1
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+[ $# -eq 0 ] && help
+
+[ -n "$SCRIPT" ] && OWN=" by $SCRIPT"
+
+MISSING=""
+for CMD in "$@"; do    
+	command -v "$CMD" >&- || { echo "$CMD is required$OWN. Please install $CMD and try again"; MISSING+="$CMD "; }
+done
+
+[ -n "$MISSING" ] && exit 1
+
+
+
+
