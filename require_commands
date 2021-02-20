@@ -41,8 +41,7 @@ for CMD in "$@"; do
 	command -v "$CMD" >&- || { echo "$CMD is required$OWN. Please install $CMD and try again"; MISSING+="$CMD "; }
 done
 
-[ -n "$MISSING" ] && exit 1
-
+[ -n "$MISSING" ] && exit 1 || exit 0
 
 
 
