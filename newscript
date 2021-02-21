@@ -37,7 +37,7 @@ function help() {
 }
 
 function on_exit() {
-	# Your cleanup code here
+	: # Your cleanup code here
 }
 trap on_exit EXIT
 
