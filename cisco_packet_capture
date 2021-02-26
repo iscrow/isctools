@@ -23,7 +23,6 @@ function exitTrap {
 	unset TEMPLATE_ACL
 	unset TEMPLATE_REMOVE_BUFFER
 	unset TEMPLATE_STOP
-	unset TFTP_GET_COMMAND
 	unset TFTP_SERVER
 }
 
@@ -152,9 +151,6 @@ $TEMPLATE_STOP
 $TEMPLATE_REMOVE_BUFFER
 "
 
-TFTP_GET_COMMAND="get $PCAP_FILE /tmp/$(basename "$PCAP_FILE")
-quit"
-
 function startCapture {
 	echo "${GREEN}Starting Capture${NC}"
 	echo "$TEMPLATE_START" | . cisco_command "$CISCO_ROUTER"
@@ -178,7 +174,7 @@ function stopCapture {
 
 function getFile {
 	echo "${GREEN}Transferring capture file $PCAP_FILE from tftp server to local machine${NC}"
-	tftp $TFTP_SERVER <<< $TFTP_GET_COMMAND
+	curl -o "/tmp/$(basename "$PCAP_FILE")" "$TFTP_SERVER://$PCAP_FILE"
 }
 
 function openWireshark {
