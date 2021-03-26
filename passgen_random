@@ -33,7 +33,10 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+PARAM="$1"
+[[ ! "$1" =~ ^[0-9]+$ ]] && ( echo; echo "Invalid parameter. Provide an integer or ommit." ) >&2 && help 
 
-PASS_LENGTH=${1:-$DEFAULT_PASS_LENGTH}
+
+PASS_LENGTH=${PARAM:-$DEFAULT_PASS_LENGTH}
 PASS=$(cat /dev/urandom | tr -dc 'abcdefghkmnpqrstuvwxyz23456789' | fold -w $PASS_LENGTH | head -n 1)
 echo "$PASS"
