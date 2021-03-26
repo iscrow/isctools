@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+DEFAULT_PASS_LENGTH=16
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT generates a random password which is non-ambiguous (skips 0,O and l,I,1)
+	
+		Usage example:
+		  $SCRIPT [<integer> specify the length of the password. Default: $DEFAULT_PASS_LENGTH]
+
+	EOF
+	exit 1
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
+PASS_LENGTH=${1:-$DEFAULT_PASS_LENGTH}
+PASS=$(cat /dev/urandom | tr -dc 'abcdefghkmnpqrstuvwxyz23456789' | fold -w $PASS_LENGTH | head -n 1)
+echo "$PASS"
