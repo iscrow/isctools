@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 NAME="$*"
-SCRIPT="$(basename "$0")"
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 [ -z "$EDITOR" ] && command -v vim >&- && EDITOR=vim
 [ -z "$EDITOR" ] && command -v vi >&- && EDITOR=vi
