@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+SCRIPT="$(basename "$0")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT Converts google drive preview links to download links
+	
+		Usage example:
+		  $SCRIPT https://drive.google.com/file/d/5kRGz68T_489zR1zlPKig14KtR6tTBteF/view?usp=sharing
+
+	EOF
+	exit 1
+}
+
+SRC=$1
+[ ${#SRC} -lt 7 ] && help
+ID=$(sed -E 's|https://.*/([^/]{30,})/.*|\1|g' <<< "$SRC")
+URL="https://drive.google.com/uc?export=download&id=$ID"
+echo "The direct download link follows. I'll try to copy it to the clipboard as well:"
+echo "$URL"
+echo "$URL" | clipboard
