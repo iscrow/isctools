@@ -59,7 +59,9 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 [ -t 0 ] && [ -z "$*" ] && help
 
 while read DEVICE; do
-	MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -c$SNMP_RO_COMMUNITY $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	MODEL=$(timeout $SNMP_TIMEOUT snmpget -v1 -c$SNMP_RO_COMMUNITY $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	[ -z "$MODEL" ] && MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -c$SNMP_RO_COMMUNITY $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
+	[ -z "$MODEL" ] && [ "$SNMP_RO_COMMUNITY" != "public" ] && MODEL=$(timeout $SNMP_TIMEOUT snmpget -v1 -cpublic $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
 	[ -z "$MODEL" ] && [ "$SNMP_RO_COMMUNITY" != "public" ] && MODEL=$(timeout $SNMP_TIMEOUT snmpget -v2c -cpublic $DEVICE 1.3.6.1.2.1.1.1.0 -Oe 2>&- | sed -E 's/.*STRING: //')
 	[ -z "$LONG" ] && MODEL=$(sed -E 's|\(/ws/[^)]+\)\)||g;s|\(Formerly ProCurve\)||g' <<< "$MODEL")
 
