@@ -2,7 +2,7 @@
 
 SCRIPT="$(basename "$0")"
 
-require_commands unbuffer whois colorize
+require_commands unbuffer whois colorize || exit 1
 
 function help() {
 	cat <<-EOF
@@ -49,6 +49,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ITEM=$1
-[ -e "$ITEM" ] && help
+
+[ -z "$ITEM" ] && help
 
 unbuffer whois $ITEM | grep Date | sed -E 's/^\s+//g' | colorize red 'Creat.*: (.*)' blue '.*: (.*)' 
