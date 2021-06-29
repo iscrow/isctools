@@ -174,7 +174,7 @@ function stopCapture {
 
 function getFile {
 	echo "${GREEN}Transferring capture file $PCAP_FILE from tftp server to local machine${NC}"
-	curl -o "/tmp/$(basename "$PCAP_FILE")" "$TFTP_SERVER://$PCAP_FILE"
+	curl -o "/tmp/$(basename "$PCAP_FILE")" "tftp://$TFTP_SERVER/$PCAP_FILE"
 }
 
 function openWireshark {
