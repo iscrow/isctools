@@ -24,7 +24,8 @@ function help() {
 cat << 'EOTEMPLATE' > "$NAME"
 #!/usr/bin/env bash
 
-SCRIPT="$(basename "$0")"
+SCRIPT="$(basename "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 function help() {
 	cat <<-EOF
@@ -36,7 +37,7 @@ function help() {
 
 	EOF
 	exit 1
-}
+}t 
 
 function on_exit() {
 	: # Your cleanup code here
