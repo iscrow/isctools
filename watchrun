@@ -21,7 +21,7 @@ while [ -z "$PRESSED" ]; do
 	CHANGED=$(stat -c %y "$FILE")
 	if [ "$CHANGED" != "$LASTCHANGED" ]; then
 		echo "$YELLOW$BGRED$(date)  Running: $COMMAND$NC"
-		$COMMAND
+		eval $COMMAND
 		echo "$WHITE$BGLBLUE$(date) Finished: $COMMAND$NC"
 		LASTCHANGED="$CHANGED"
 	fi
