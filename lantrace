@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 IP=$1
 
+require_commands traceroute gawk expect
+
 function log() {
 	echo $(date) :: "$*" >> /tmp/lantrace
 }
@@ -76,7 +78,7 @@ function finish() {
 }
 
 
-L3HOPS=$(traceroute $IP -n -w 3 -q 1 -N 32 -m 6 2>&-| grep -vP "\s$IP\s" | awk '/^\s[0-9]\s+[0-9]/{print $2}')
+L3HOPS=$(traceroute $IP -I -n -w 3 -q 1 -N 32 -m 6 2>&-| grep -vP "\s$IP\s" | awk '/^\s[0-9]\s+[0-9]/{print $2}')
 
 
 . cisco_auth

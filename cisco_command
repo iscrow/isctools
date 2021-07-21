@@ -56,7 +56,7 @@ function runCommands {
 	
 	log_user 0
 
-	spawn -noecho ssh $USER@$DEVICE
+	spawn -noecho ssh -oKexAlgorithms=+diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1 $USER@$DEVICE
   expect {
 		"yes/no" {
 			send "yes\r"
