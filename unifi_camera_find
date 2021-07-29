@@ -19,4 +19,4 @@ PARAMS=$*
 [ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
 [ -z "$PARAMS" ] && help
 
-http_scan --https --regex '<title>UniFi Video</title>' $PARAMS
+http_scan --https --regex '<title>UniFi (Video|Protect)</title>' $PARAMS
