@@ -105,6 +105,7 @@ function runCommands {
 			expect -re $PROMPT
 			log_user 0
 		}
+		send "end\r"
 		send "exit\r"
 		expect ">"
 		send "exit\r"
