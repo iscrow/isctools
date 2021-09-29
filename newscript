@@ -24,8 +24,9 @@ function help() {
 cat << 'EOTEMPLATE' > "$NAME"
 #!/usr/bin/env bash
 
-SCRIPT="$(basename "${BASH_SOURCE[0]}")"
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 function help() {
 	cat <<-EOF

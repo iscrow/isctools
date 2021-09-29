@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 BASE="/tmp/overlord"
-WAIT=1 #How long to wait for additional output
-WAIT=$(echo "$WAIT/60" | bc -l)
+WAIT_MINUTES=1 #How long to wait for additional output
+WAIT=$(echo "$WAIT_MINUTES/60" | bc -l)
 
 SESSION="$1"
 shift
