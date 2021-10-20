@@ -48,7 +48,7 @@ function cidr_to_ips {
 	sipcalc "$SUBNET" -s32 | awk '/Network/{print $NF}' | tr '\n' ' '
 }
 
-[ -z $(command -v sipcalc) ] && echo "$SCRIPT requires sipcalc" | colorize red . && exit 1
+[ -z "$(command -v sipcalc)" ] && echo "$SCRIPT requires sipcalc" | colorize red . && exit 1
 
 SORT="yes"
 

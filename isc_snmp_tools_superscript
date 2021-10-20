@@ -18,8 +18,8 @@ NA="" # Not Available String
 SNMP_RO_COMMUNITY="public"
 PROCURVE_MODEL_FILTER="s|||g"
 CISCO_MODEL_FILTER="s|||g"
-[ -n $(command -v pktools_vars) ]    && source pktools_vars
-[ -n $(command -v isctools_common) ] && source isctools_common
+[ -n "$(command -v pktools_vars)" ]    && source pktools_vars
+[ -n "$(command -v isctools_common)" ] && source isctools_common
 
 function fixmac() {
 	local RAWMAC="$*"

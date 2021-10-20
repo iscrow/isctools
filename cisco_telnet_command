@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+export DEVICE=$1
+shift 2>/dev/null
+if [ -t 0 ]; then
+	# STDIN not a pipe
+	export COMMANDS="$*"
+else
+	# STDIN may be a pipe
+	export COMMANDS="${*:-$(cat)}"
+fi
+
+if [ -z "$CISCO_SHOWRUNN_PASS" ]; then
+	if [ ! -t 1 ] || [ ! -t 0 ]; then
+		# stdout isn't a terminal
+		echo "There are no cached credentials. Please run '. cisco_command' alone to cache them."
+		return 2>&-
+		exit 1
+	fi
+
+	>&2 echo "If you source this file you credentials will be cached in memory for this shell only"
+	
+	>&2 echo -n 'Password: '
+	read -s CISCO_SHOWRUNN_PASS
+	export CISCO_SHOWRUNN_PASS
+	>&2 echo
+	>&2 echo -n 'Enable: '
+	read -s CISCO_SHOWRUNN_ENABLE
+	export CISCO_SHOWRUNN_ENABLE
+	>&2 echo
+	>&2 echo
+fi
+
+export PASS="$CISCO_SHOWRUNN_PASS"
+export ENABLE="$CISCO_SHOWRUNN_ENABLE"
+
+if [ -z "$DEVICE" ] || [ -z "$COMMANDS" ]; then
+	echo "Usage: . cisco_command hostname command"
+	echo "Example: . cisco_command myrouter show runn"
+	echo "Multiple command example: . cisco_command myrouter show runn :: show cdp ne :: sh lldp ne"
+	return 1 2>&-
+	exit 1
+fi
+
+COMMANDS="$(sed -E 's/::/\n/g' <<< $COMMANDS)"
+
+function runCommands {
+	/usr/bin/env expect -c '
+	set timeout 60
+	set DEVICE $::env(DEVICE)   
+	set COMMANDS [split $::env(COMMANDS) "\n"]   
+	set USER "admin"
+	set PASS $::env(PASS)   
+	set ENABLE $::env(ENABLE) 
+	set PROMPT ".#.*$"  
+	
+	log_user 0
+
+	spawn -noecho telnet $DEVICE
+  expect {
+		"Username:" {
+			send "$USER\r"
+			exp_continue
+		}
+		"Password:" {
+			send "$PASS\r"
+		}
+	}
+	expect ">"
+	send "en\r$ENABLE\r"
+	expect -re $PROMPT {
+		send "terminal length 0\r"
+		expect -re $PROMPT
+		send "terminal width 0\r"
+		expect -re $PROMPT
+		foreach COMMAND $COMMANDS {
+			# This is to clean up the previous expect_out(buffer) content
+			# So that, we can get the exact output what we need.
+			expect *
+			send "[string trim $COMMAND]\r"
+			log_user 1
+			expect -re $PROMPT
+			log_user 0
+		}
+	}' | tr -cd "[:print:]\n" | grep -Pv '^\S+#(\r|\s+|$)'
+}
+
+runCommands

@@ -20,7 +20,7 @@ function help() {
 }
 
 SNMP_RO_COMMUNITY="public"
-[ -n $(command -v pktools_vars) ] && source pktools_vars
+[ -n "$(command -v pktools_vars)" ] && source pktools_vars
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
