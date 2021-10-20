@@ -1,5 +1,8 @@
 #! /bin/env bash
 SCRIPT=$(basename "$0")
+
+require_commands snmpbulkwalk
+
 IP=$1
 pr_max_length=29826161 #The highest number that the pr command takes as a --length parameter
 
