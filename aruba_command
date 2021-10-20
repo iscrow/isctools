@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+require_commands expect || exit 1
+
 DEVICE=$1
 export ARUBA_COMMAND_TIMEOUT=${ARUBA_COMMAND_TIMEOUT:-30}
 [ "$ARUBA_COMMAND_DEBUG" ] && ARUBA_COMMAND_DEBUG="-d"

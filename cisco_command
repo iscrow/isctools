@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+require_commands expect || exit 1
+
 export DEVICE=$1
 shift 2>/dev/null
 if [ -t 0 ]; then
