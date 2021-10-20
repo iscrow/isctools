@@ -3,7 +3,7 @@
 SNMP_TIMEOUT=2
 SCRIPT="$(basename "$0")"
 
-require_commands snmpget
+require_commands snmpget || exit 1
 
 function help() {
 	cat <<-EOF

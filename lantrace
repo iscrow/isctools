@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 IP=$1
 
-require_commands traceroute gawk expect
+require_commands traceroute gawk expect || exit 1
 
 function log() {
 	echo $(date) :: "$*" >> /tmp/lantrace
