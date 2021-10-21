@@ -38,7 +38,7 @@ QUESTION="${*%\?}"
 GO=""
 while [[ ! "$GO" =~ yes|no ]]; do
 	echo -n "$QUESTION? (yes/no): "
-	read GO
+	read GO < /dev/tty # Read keyboard directly instead of STDIN in case we run this while we're processing piped stdin!!!
 done
 [ "$GO" == "yes" ] && exit 0 && exit 1
 
