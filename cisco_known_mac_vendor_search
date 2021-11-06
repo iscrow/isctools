@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-DB=~/.macvendors.csv
-TMP_DB="$DB.tmp"
-DB_URL="https://macaddress.io/database/macaddress.io-db.csv"
-
 function finish {
   rm "$TMP_DB" &>/dev/null
 }
@@ -44,18 +40,8 @@ NODE=$1
 shift
 SEARCH="$*"
 
-function refreshDatabase() {
-	OLD=$(find $DB -type f -mtime +7 2>&- | wc -l)
-	if [ $OLD -eq 1 ] || [ ! -s "$DB" ]; then
-		curl -s "$DB_URL" > "$TMP_DB"
-		[ -s "$TMP_DB" ] && mv "$TMP_DB" "$DB" || rm "$TMP_DB"
-	fi
-	[ ! -s "$DB" ] && echo "Could not obtain MAC Database. Exiting." && exit 1
-}
-
 function findVendor() {
-	local OUI=$(IFS=:; cut -d: -f1-3 <<< ${1^^})
-	grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g'
+	oui "$1" | cut  -d$'\t' -f3
 }
 
 function getData() {
@@ -69,8 +55,6 @@ function getData() {
 	done < <(. cisco_command ${NODE} sh arp :: sh ip dhcp bind | grep -P '   ([0-9a-f]{3})?[0-9a-f.]{14} ' | perl -pe 's/(?:^|.*\D)([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}) .*(([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})|([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})([0-9a-f]{2})\.([0-9a-f]{2})) .*/$1 $3:$4:$5:$6:$7:$8$9:$10:$11:$12:$13:$14/g;s/:{5}//g') | sort -Vu
 	#done < <(snmpbulkwalk -c${SNMPCOMMUNITY} -v2c -OXsqn "$NODE" .1.3.6.1.2.1.3.1.1.2) | sort -V # This only works with the arp table. DHCP bindings on cisco ios are not available via SNMP
 }
-
-refreshDatabase
 
 source cisco_auth
 DATA="$(getData | grep -Pi "$SEARCH")"

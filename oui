@@ -2,7 +2,9 @@
 
 DB=~/.macvendors.csv
 TMP_DB="$DB.tmp"
-DB_URL="https://macaddress.io/database/macaddress.io-db.csv"
+#DB_URL="https://macaddress.io/database/macaddress.io-db.csv"
+DB_URL="https://maclookup.app/downloads/csv-database/get-db"
+DB_VENDOR_FIELD=2
 
 function finish {
   rm "$TMP_DB" &>/dev/null
@@ -29,7 +31,7 @@ function findVendor() {
 	for MASKBYTES in 8 10 13; do
 		LASTOUI=${OUI:-$MAC}
 		OUI="${MAC:0:$MASKBYTES}"
-		VENDORS=$(grep -iP "^$OUI" "$DB" | cut -d, -f3- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
+		VENDORS=$(grep -iP "^$OUI" "$DB" | cut -d, -f$DB_VENDOR_FIELD- | tr -d '"' | sed -E 's/,(\S)/, \1/g;s/,[^,]+,[^,]+,[^,]+,[^,]+$//g')
 		LASTMATCHES=${MATCHES:-0}
 		MATCHES=$(echo -n "$VENDORS" | grep -c '^')
 		[ "$MATCHES" -eq 0 ] && break
