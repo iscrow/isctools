@@ -33,8 +33,8 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-PARAM="$1"
-[[ ! "$1" =~ ^[0-9]+$ ]] && ( echo; echo "Invalid parameter. Provide an integer or ommit." ) >&2 && help 
+PARAM=${1:-16}
+[[ ! "$PARAM" =~ ^[0-9]+$ ]] && ( echo; echo "Invalid parameter. Provide an integer or ommit." ) >&2 && help 
 
 
 PASS_LENGTH=${PARAM:-$DEFAULT_PASS_LENGTH}
