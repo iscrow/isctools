@@ -37,7 +37,6 @@ function cidr_validate {
 
 function check_ip {
 	local IP="$1"
-	echo $IP >> /tmp/log
 	while read LINE; do
 		echo $LINE
 		break
