@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+PROPOSED_DNS="1.1.1.1"  # Default DNS
+CONNECTION="lanip"      # Connection to create
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT sets static IP and gateway on lan port
+	
+		Usage example:
+		  $SCRIPT
+
+	EOF
+	exit 1
+} 
+
+function on_exit() {
+	: # Your cleanup code here
+}
+trap on_exit EXIT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+#DEVS=$(nmcli dev status | grep ethernet | cut -d\  -f1)
+DEVS=$(nmcli dev status | cut -d\  -f1 | grep -Pv '^DEVICE$|^zt|^p2p|^lo' | sort)
+while [ -z "$DEV" ]; do 
+    echo "Select Interface to configure:"
+    select DEV in $DEVS; do break; done
+done
+TYPE=$(nmcli dev status | grep -P "^$DEV" | awk '{print $2}')
+echo
+echo "Connection $DEV with type $TYPE"
+echo
+while [ -z "$SUBNET" ]; do
+    read -p "Enter IP in CIDR notation (x.x.x.x/yy): " ENTRY
+    SUBNET="$(ip_subnet_validate "$ENTRY")"
+done
+IFS='/' read -r IP MASK <<< $SUBNET
+
+IFS='.' read -r O1 O2 O3 O4 <<< $IP
+PROPOSED_GATEWAY="$O1.$O2.$O3.1"
+
+while [ -z "$GATEWAY" ]; do
+    ENTRY=""
+    read -p "Enter default gateway ($PROPOSED_GATEWAY): " ENTRY
+    [ -z "$ENTRY" ] && ENTRY="$PROPOSED_GATEWAY"
+    GATEWAY="$(ip_validate "$ENTRY")"
+done
+
+while [ -z "$DNS" ]; do
+    read -p "Enter DNS Server ($PROPOSED_DNS): " DNS
+    [ -z "$DNS" ] && DNS="$PROPOSED_DNS"
+done
+
+echo
+echo "    DEV: $DEV"
+echo "     IP: $IP"
+echo "   MASK: $MASK"
+echo "GATEWAY: $GATEWAY"
+echo "    DNS: $DNS"
+echo
+
+nmcli con del con-name $CONNECTION 2>&-
+nmcli con add con-name $CONNECTION type $TYPE ifname $DEV
+nmcli con mod $CONNECTION ipv4.addresses $SUBNET
+nmcli con mod $CONNECTION ipv4.gateway $GATEWAY
+nmcli con mod $CONNECTION ipv4.dns $DNS
+nmcli con mod $CONNECTION ipv4.method manual
+nmcli con up $CONNECTION
+nmcli device status
+ip addr show dev $DEV
+echo
+
