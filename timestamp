@@ -1,3 +1,54 @@
 #!/usr/bin/env bash
 
-date "+%a %b %d %Y %H:%M" | clipboard
+FORMAT="+%Y-%m-%d--%H-%M-%S"
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT creates a timestamp on stdout or the clipboard
+	
+		Usage example:
+		  $SCRIPT generates a timestamp and copies it to the clipboard
+		  $SCRIPT -s generates a timestamp on stdout
+
+	EOF
+	exit 1
+} 
+
+function on_exit() {
+	: # Your cleanup code here
+}
+trap on_exit EXIT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	-s|--stdout)
+	STDOUT="YES"
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+TIMESTAMP=$(date "$FORMAT")
+if [ -z "$STDOUT" ]; then
+	echo "$TIMESTAMP" | clipboard
+else
+	echo "$TIMESTAMP"
+fi
