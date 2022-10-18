@@ -48,7 +48,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 TIMESTAMP=$(date "$FORMAT")
 if [ -z "$STDOUT" ]; then
-	echo "$TIMESTAMP" | clipboard
+	echo -n "$TIMESTAMP" | clipboard
 else
 	echo "$TIMESTAMP"
 fi
