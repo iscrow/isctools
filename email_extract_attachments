@@ -33,7 +33,8 @@ if [[ "$DATA" =~ ^curl\  ]]; then
 	URL=$( ( sed -E 's/\|.*//;s/\\//g' | tr -d '\n' ) <<< "$DATA")
 	# Use recode to decode html escaped characters 
 	eval $URL -o "$TMP_ORIG_FILE"
-	cat "$TMP_ORIG_FILE" | recode -f html..ascii > $ORIG_FILE
+	#cat "$TMP_ORIG_FILE" | grep ',"Delivered-To:' | perl -pe 's/.*,"(Delivered-To:.*)"], .*/$1/g' | sed -e 's/\\r\\n/\n/g;s/\\"/"/g' | recode -f html..ascii > $ORIG_FILE
+	cat "$TMP_ORIG_FILE" | grep ',"Delivered-To:' | perl -pe 's/.*,"(Delivered-To:.*)"], .*/{"data":"$1"}/g' | jq -r '.data' > $ORIG_FILE
 	rm "$TMP_ORIG_FILE"
 else
 	echo "$DATA" > $ORIG_FILE
