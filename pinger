@@ -88,14 +88,14 @@ while true; do
   #response=$(ping -W $timeout -w $timeout -s 1472 -c 1 $ip 2>&1)
   #response=$(ping -W $timeout -w $timeout -c 1 $ip 2>&1)
   response=$(ping -n -O -W 1 -c 1 $ip 2>&1)
-  errorcount=$(echo "$response" | egrep -c '(ping:|connect:|Unreachable|Unknown|Usage:)')
+  errorcount=$(echo "$response" | grep -Ec '(ping:|connect:|Unreachable|Unknown|Usage:)')
   miss=$(echo "$response" | grep -c '100% packet loss')
-  responsecount=$(echo "$response" | egrep -c 'icmp_seq')
+  responsecount=$(echo "$response" | grep -Ec 'icmp_seq')
   #hosterror=$(echo "$response" | sed -e 's/\(ping:|connect:\) \(.*\)/\2/g')
   #[[ "$response" =~ 'Unreachable' ]] && hosterror="Unreachable"
   #[[ "$response" =~ 'Unknown' ]] && hosterror="Destination Net Unknown"
-  [ -z "$ip" ] && responseerr="RESOLVING" || responseerr=$(echo "$response" | egrep icmp_seq | grep 'From\ ' | sed -e 's/.*icmp_seq=\S\s\+\(.*\)/\1/g')
-  response=$(echo "$response" | egrep icmp_seq | grep -v 'From\ ')
+  [ -z "$ip" ] && responseerr="RESOLVING" || responseerr=$(echo "$response" | grep icmp_seq | grep 'From ' | sed -e 's/.*icmp_seq=\S\s\+\(.*\)/\1/g')
+  response=$(echo "$response" | grep icmp_seq | grep -v 'From ')
   iperror=$responseerr
   [ "$responseerr" != '' ] && responseerr="$responseerr "
   currcount=$(echo "$response" | grep icmp_seq | wc -l)
