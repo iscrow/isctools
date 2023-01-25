@@ -209,7 +209,7 @@ function getLLDP() {
 			"${LLDP_RECORD[PortDesc]:-$NA}" \
 			"${LLDP_RECORD[SysDesc]:-$NA}" \
 
-		done | sort -V -k3,3 ) | column -t -s$'\t' -o$'\t')"
+		done | sort -V -k3,3 ) | column -t -s$'\t')"
 		# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
 
 		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
