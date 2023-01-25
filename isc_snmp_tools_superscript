@@ -1,4 +1,4 @@
-#! /bin/env bash
+#!/usr/bin/env bash
 SCRIPT=$(basename "$0")
 
 require_commands snmpbulkwalk || exit 1
