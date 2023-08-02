@@ -52,4 +52,4 @@ ITEM=$1
 
 [ -z "$ITEM" ] && help
 
-unbuffer whois $ITEM | grep Date | sed -E 's/^\s+//g' | colorize red 'Creat.*: (.*)' blue '.*: (.*)' 
+unbuffer whois $ITEM | grep -P 'Date|Created On:|Last Updated On:' | sed -E 's/^\s+//g' | colorize red 'Creat.*: (.*)' blue '.*: (.*)' 
