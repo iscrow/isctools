@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT Determines if an IP address is in a CIDR subnet range
+	
+		Usage example:
+		  $SCRIPT <ip_address> <cidr_sibnets>
+			$script 10.10.64.106 10.30.64.0/24 10.10.64.0/18
+
+	EOF
+	exit 1
+} 
+
+function on_exit() {
+	: # Your cleanup code here
+}
+trap on_exit EXIT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+IP=$1
+shift
+SUBNETS="$*"
+
+[ -z "$IP" ] && echo -e '\nPlease specify an IP address' && help
+[ -z "$SUBNETS" ] && echo -e '\nPlease specify one or more CIDR subnets' && help
+
+MATCHES=""
+
+for SUBNET in $SUBNETS; do
+	grepcidr "$SUBNET" <(echo "$IP") >/dev/null && MATCHES+="$SUBNET "
+done
+
+if [ -n "$MATCHES" ]; then
+	echo $MATCHES
+	exit 0
+else
+	exit 1
+fi
