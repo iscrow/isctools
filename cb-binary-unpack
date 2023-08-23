@@ -1,47 +1,35 @@
 #!/usr/bin/env bash
 
-#Finds the last downloaded zipped binary from cb defense, 
-#nzips it and allows opens the directory with bash and the
-#default file manager (to submit to virustotal, etc.)
+DIR="$HOME/Downloads/CB_Malware_Binaries"
+BIN=$(ls -tr ~/Downloads/????????-????-????-????-???????????? | tail -n 1)
 
-ZIP=$(ls -tr ~/Downloads/????????????????????????????????????????????????????????????????.zip | tail -n 1)
-stat "$ZIP" | grep -P "File:|Birth:" | colorize green 'Birth: .*'
-DIR=$(mktemp -d /tmp/cb-binary-unpack.XXXXXXXX)
-if [ $? -ne 0 ]; then
-	echo "Cannot create temp directory. Exiting."
-	exit 1
-fi
+echo "Original cb get download detected is $BIN"
+ls -l "$BIN"
+file "$BIN"
 
-function finish {
-  [ -n "$DIR" ] && [[ "$DIR" =~ /tmp/cb-binary-unpack.* ]] && [ -d "$DIR" ] && rm -rf "$DIR"
-}
-trap finish EXIT
-
-cd "$DIR"
-7z e "$ZIP"
-
-if [ ! -e "$DIR/filedata" ]; then
-	echo "$DIR/filedata" does not exit. Exiting.
-	exit 2
-fi
+[ ! -d "$DIR" ] && echo $DIR does not exist. Exiting. && exit 1
 
 while [ -z "$FILENAME" ]; do
 	echo -n "Enter original filename: "
 	read FILENAME
 done
 
-mv filedata "$FILENAME"
+FILE="$DIR/$FILENAME"
+mkdir "$DIR" &>/dev/null
+touch "$DIR"
+mv "$BIN" "$FILE"
+
 if [ "$?" -ne 0 ]; then
-	echo "Could not rename filedata to $FILENAME"
+	echo "Could not rename $BIN to $FILE"
 fi
 
-xdg-open "$DIR" &
-$SHELL
+virustotal_scan $FILE
+
 REMOVE="?"
 while [[ ! "$REMOVE" =~ ^(y|n|Y|N|)$ ]]; do
-	echo -n "Remove $ZIP? Default: y (y|n): "
+	echo -n "Remove $BIN and $FILE? Default: y (y|n): "
 	REMOVE="y"
 	read -n1 REMOVE
 	echo
 done
-[[ "$REMOVE" =~ ^(y|Y|)$ ]] && echo "Removing $ZIP" && rm "$ZIP"
+[[ "$REMOVE" =~ ^(y|Y|)$ ]] && echo "Removing $BIN and $FILE" && rm "$BIN" "$FILE"
