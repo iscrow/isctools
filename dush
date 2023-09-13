@@ -16,4 +16,8 @@ function help() {
 
 grep -Piq -- '--help|-h' <<< $* && help
 
-du -sh .[^.]* * 2>&- | sort -h
+
+LIST="$(find -maxdepth 1 | grep -Pv '^\.$')"
+while read -r FILE; do
+	du -sh "$FILE"
+done <<< "$LIST" | sed -E 's|(^[^ ]+)\t\./(.*)|\1\t\2|g' | sort -h
