@@ -111,9 +111,11 @@ export REGEX
 
 [ -t 1 ] && TERMINAL="yes" || TERMINAL=""
 
-[ -z "$*" ] && help
+RANGES=$*
+[ ! -t 0 ] && RANGES="$(cat | tr '\n' ' ' | tr '\r' ' ') $RANGES"
+[ -z "$RANGES" ] && help
 
-for SUBNET in $*; do
+for SUBNET in $RANGES; do
 	if [ -z $(cidr_validate $SUBNET) ]; then
 		echo
 		echo "$SUBNET is not a valid IP or CIDR notation subnet. Exiting..." | colorize red .
