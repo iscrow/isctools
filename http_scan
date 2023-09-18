@@ -15,7 +15,7 @@ function help() {
 		$SCRIPT [-s|--https]
 		        [-p|--port <port>]
 		        [-t|--timeout <timeout_seconds>]
-		        [-r|--regex <regex>]
+		        [-r|--regex <regex>]  ***Newlines are converted to '|' in the incoming data
 		        [-u|--url_path <url_path>]
 		        [--processes <processes>]
 		        [-n|--unsorted]
@@ -40,7 +40,7 @@ function check_ip {
 	while read LINE; do
 		echo $LINE
 		break
-	done < <(timeout $CONNECT_TIMEOUT curl -L -s -k -D - --connect-timeout $CONNECT_TIMEOUT "$PROTOCOL://$IP:$PORT$URL_PATH" 2>&1 | grep -qP "$REGEX" && echo $IP)
+	done < <(timeout $CONNECT_TIMEOUT curl -L -s -k -D - --connect-timeout $CONNECT_TIMEOUT "$PROTOCOL://$IP:$PORT$URL_PATH" 2>&1 | tr '\n' '|' | grep -qP "$REGEX" && echo $IP)
 }
 
 function cidr_to_ips {
