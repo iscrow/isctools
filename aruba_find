@@ -19,4 +19,4 @@ PARAMS=$*
 [ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
 [ -z "$PARAMS" ] && help
 
-http_scan --regex 'Server: eHTTP|Aruba Instant On' $PARAMS
+http_scan --regex 'Server: eHTTP|Aruba Instant On|Location: /web/index.html.*HTTPD' $PARAMS
