@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+NAME="$*"
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+[ -z "$EDITOR" ] && command -v vim >&- && EDITOR=vim
+[ -z "$EDITOR" ] && command -v vi >&- && EDITOR=vi
+[ -z "$EDITOR" ] && command -v nano >&- && EDITOR=nano
+
+function help() {
+	echo "$SCRIPT creates a new starter bash script"
+	echo "Usage:"
+	echo "  $SCRIPT script_name"
+	echo
+	exit 1
+}
+
+
+[ -z "$NAME" ] && help
+[ -e "$NAME" ] && echo "$NAME already exists. Exiting." && exit 1
+
+cat << 'EOTEMPLATE' > "$NAME"
+#!/usr/bin/env bash
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+EOTEMPLATE
+
+chmod +x "$NAME"
+
+[[ "$EDITOR" =~ vi ]] && $EDITOR "$NAME" +$ || $EDITOR "$NAME"
