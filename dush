@@ -17,7 +17,7 @@ function help() {
 
 grep -Piq -- '--help|-h' <<< $* && help
 
-du -sh $* .[^.]* * | sort -h
+du -sh $* $(ls -A) | sort -h
 
 #LIST="$(find -maxdepth 1 2>&- | grep -Pv '^\.$')"
 #while read -r FILE; do
