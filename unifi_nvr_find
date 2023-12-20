@@ -19,4 +19,4 @@ PARAMS=$*
 [ ! -t 0 ] && PARAMS="$(cat | tr '\n' ' ' | tr '\r' ' ') $PARAMS"
 [ -z "$PARAMS" ] && help
 
-http_scan --https --regex '<script .*src="/vendor\..*\.js">.* src="/main\..*\.js">' $PARAMS
+http_scan --https --regex 'UniFi OS|<script .*src="/vendor\..*\.js">.* src="/main\..*\.js">' $PARAMS
