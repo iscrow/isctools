@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+XCLIP=$(which xclip)
+if [ "$XCLIP" == "" ]; then
+    echo "Need to install xclip"
+    exit 1
+fi
+
+XDOTOOL=$(which xdotool)
+if [ "$XDOTOOL" == "" ]; then
+    echo "Need to install xdotool"
+    exit 1
+fi
+
+TEXT=$($XCLIP -out -selection clipboard)
+
+if [ "$TEXT" == "" ]; then
+    exit;
+fi
+
+ACTIVEWIN=$($XDOTOOL getactivewindow)
+if [ "$ACTIVEWIN" == "" ]; then
+    exit;
+fi
+
+sleep 2
+
+$XDOTOOL type --window $ACTIVEWIN "$TEXT"
