@@ -16,6 +16,7 @@ oidMACAddressTable=.1.3.6.1.2.1.17.4.3.1.2
 oidIFSpeed=.1.3.6.1.2.1.31.1.1.1.15
 oidIFDuplex=.1.3.6.1.2.1.10.7.2.1.19
 oidIPToMAC=.1.3.6.1.2.1.4.22.1.2								#ipNetToMediaPhysAddress
+oidIFOperStatus=.1.3.6.1.2.1.2.2.1.8
 
 NA="" # Not Available String
 
@@ -291,6 +292,22 @@ function getARPTable() {
 		echo "$OUTPUT" | tail +2 | sort -V -k3,3
 }
 
+function getLinkStatus() {
+	local IP=$1
+	local DATA
+	declare -A OUIS=()
+	OUTPUT="$(( printf "%s\t%s\n" IFName LinkStatus
+	while read -r INDEX EQUALS LINKSTATUS; do
+		IFACE="${IFINDEX[$INDEX]:-none}"
+		printf "%s\t%s\n" "$IFACE" "$LINKSTATUS"
+
+	done < <(w $IP $oidIFOperStatus | grep -P '\.\d\d? = ' | deoid $oidIFOperStatus. | sed -E 's/^([^.]+)\./\1 /g') | sort -k2,2 ) | column -t -s$'\t' -o$'\t')"
+	# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
+
+		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
+		echo "$OUTPUT" | tail +2 | sort -V -k3,3
+}
+
 declare -A IFINDEX
 declare -A IFSPEED
 declare -A IFDUPLEX
@@ -301,4 +318,5 @@ getIFIndices $IP
 [ "$SCRIPT" == "snmp-mac-address-table" ] && getMACAddressTable $IP
 [ "$SCRIPT" == "snmp-lldp" ] && getLLDP $IP
 [ "$SCRIPT" == "snmp-arp-table" ] && getARPTable $IP
+[ "$SCRIPT" == "snmp-link-status" ] && getLinkStatus $IP
 
