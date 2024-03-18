@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 SCRIPT=$(basename "$0")
 
+# !!! IMPORTANT !!!
+#
+# This tool depends on the linux snmp mibs being installed. On ubintu apt install snmp-mibs-downloader and
+# comment out the mibs: directive in /etc/snmp/snmp.conf
+#
+# !!! IMPORTANT !!!
+
 require_commands snmpbulkwalk || exit 1
 
 IP=$1
