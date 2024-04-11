@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT monitors the clipboard contents and outputs them to stdout when they change
+	
+		Usage example:
+		  $SCRIPT
+
+	EOF
+	exit 1
+} 
+
+function on_exit() {
+	: # Your cleanup code here
+}
+trap on_exit EXIT
+
+while sleep 0.1; do
+	C=$(clipboard)
+	if [ "$C" != "$O" ]; then
+		echo "$C"
+		timeout 0.1 speaker-test -t sine -f 1000 &>/dev/null -l 0.1
+		O="$C"
+	fi
+done
