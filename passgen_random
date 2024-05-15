@@ -38,5 +38,6 @@ PARAM=${1:-16}
 
 
 PASS_LENGTH=${PARAM:-$DEFAULT_PASS_LENGTH}
-PASS=$(cat /dev/urandom | tr -dc 'abcdefghkmnpqrstuvwxyz23456789' | fold -w $PASS_LENGTH | head -n 1)
+#PASS=$(cat /dev/urandom | tr -dc 'A-Za-z1-9' | tr -d "1IiOoSs5lj" | fold -w $PASS_LENGTH | head -n 1)
+PASS=$(LC_ALL=C tr -dc 'A-Za-z1-9' < /dev/urandom | tr -d "1IOS5Ulio" | fold -w $(($PASS_LENGTH+2)) | sed -E 's/(.{0,4})./\1 /g' | fold -w $(($PASS_LENGTH)) | head -1 | tr " " "-")
 echo "$PASS"
