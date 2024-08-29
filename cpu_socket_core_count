@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT="$(basename "$SCRIPT_PATH")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+function help() {
+	cat <<-EOF
+
+		$SCRIPT outputs the number of CPU Cores and Sockets
+	
+		Usage example:
+			$SCRIPT						# Get info from local host
+			$SCRIPT user@host	# Get info from a specified ssh host
+
+	EOF
+	exit 1
+} 
+
+function on_exit() {
+	: # Your cleanup code here
+}
+trap on_exit EXIT
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-h|--help)
+	help
+	shift # past argument
+	;;
+	*) # unknown option
+	POSITIONAL+=("$1") # save it in an array for later
+	shift # past argument
+	;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+_HOST=$1
+
+if [ -z "$_HOST" ]; then
+	lscpu | grep -P 'Core|Socket' | perl -pe 's/.* +(\d+)$/$1/g' | tr '\n' ' ' | xargs | tr ' ' '\t'
+else
+	ssh $_HOST "lscpu | grep -P 'Core|Socket' | perl -pe 's/.* +(\d+)$/\$1/g' | tr '\n' ' ' | xargs | tr ' ' '\t'"
+fi
