@@ -4,6 +4,8 @@ SCRIPT_PATH="$(realpath "$0")"
 SCRIPT="$(basename "$SCRIPT_PATH")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
+SLEEP=${1:-2}
+
 XCLIP=$(which xclip)
 if [ "$XCLIP" == "" ]; then
     echo "Need to install xclip"
@@ -22,11 +24,11 @@ if [ "$TEXT" == "" ]; then
     exit;
 fi
 
+sleep $SLEEP
+
 ACTIVEWIN=$($XDOTOOL getactivewindow)
 if [ "$ACTIVEWIN" == "" ]; then
     exit;
 fi
-
-sleep 2
 
 $XDOTOOL type --window $ACTIVEWIN "$TEXT"
