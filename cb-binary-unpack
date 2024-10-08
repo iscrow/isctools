@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
 DIR="$HOME/Downloads/CB_Malware_Binaries"
-BIN=$(ls -tr ~/Downloads/????????-????-????-????-???????????? | tail -n 1)
+ZIP=$(ls -tr ~/Downloads/????????????????????????????????????????????????????????????????.zip | tail -n 1)
+
+BASENAME=$(basename "$ZIP")
+SUBDIR=${BASENAME%.zip}
+
+BINDIR="$DIR/$SUBDIR"
+unzip "$ZIP" -d "$BINDIR"
+
+BIN="$BINDIR/filedata"
 
 echo "Original cb get download detected is $BIN"
 ls -l "$BIN"
+
 file "$BIN"
 
 [ ! -d "$DIR" ] && echo $DIR does not exist. Exiting. && exit 1
@@ -14,9 +23,10 @@ while [ -z "$FILENAME" ]; do
 	read FILENAME
 done
 
-FILE="$DIR/$FILENAME"
-mkdir "$DIR" &>/dev/null
+FILE="$BINDIR/$FILENAME"
+#mkdir "$DIR" &>/dev/null
 touch "$DIR"
+touch "$BINDIR"
 mv "$BIN" "$FILE"
 
 if [ "$?" -ne 0 ]; then
@@ -32,4 +42,4 @@ while [[ ! "$REMOVE" =~ ^(y|n|Y|N|)$ ]]; do
 	read -n1 REMOVE
 	echo
 done
-[[ "$REMOVE" =~ ^(y|Y|)$ ]] && echo "Removing $BIN and $FILE" && rm "$BIN" "$FILE"
+[[ "$REMOVE" =~ ^(y|Y|)$ ]] && echo "Removing $BIN and $FILE" && ( rm "$ZIP" "$FILE" ; rmdir "$BINDIR" )
