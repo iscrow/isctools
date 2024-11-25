@@ -41,7 +41,7 @@ You should be everyone’s specialist subject on Mastermind.
 You could open that jar of mayonnaise using only 3 fingers.
 Strangers all wanna sit next to you on the bus.
 Coworkers fantasizes about getting stuck in the elevator with you.
-If Einstein could meet you, he'd be \"mildly to moderately\" intimidated.
+If Einstein could meet you, he'd be 'mildly to moderately' intimidated.
 At least two friends are going to name their child and/or goldfish after you.
 socks + sandals + you = I'm into it.
 Your ex thought about you this morning, then they thought about donuts.
@@ -175,14 +175,25 @@ I'm not insulting you, I'm describing you.
 Maybe you should eat some makeup so you can be pretty on the inside too.
 Our time together is like a nap, it just doesn't last long enough.
 Every day without you is like a day without my phone, I just don't know what to do with myself.
-I'm really good at people-watching. I'm so glad I can practice that skill on you."
-
+I'm really good at people-watching. I'm so glad I can practice that skill on you.
+You’re like a lighthouse in a storm—mostly just standing there looking confused, but occasionally useful.
+You’re the human version of a traffic cone — completely in the way but oddly necessary.
+Your sense of style is bold, brave, and completely unhinged. Respect.
+You have the perfect face for a meme. Iconic, truly.
+You’re so good at multitasking — breathing and blinking at the same time? Talent!
+You have such great taste… in people, obviously, because you’re talking to me.
+Your dance moves are so unique, they should be classified as a new art form.
+You’re like a taco: a little messy, but everyone loves you.
+If you were a fruit, you’d be a fineapple.
+If you were a sandwich, you’d be the special of the day!
+You’re like a GPS; even when you’re wrong, I still listen to you.
+You’re so photogenic, cameras feel honored to capture your face.
+You have the unique ability to make any situation 25% more entertaining."
 
 insults="Can I have the name of your hair salon? I need to know where not to go.
 You seem to be suffering from delusions of adequacy.
 My days of not taking you seriously have come to a middle.
 You are the human equivalent of a participation trophy.
-You have a face for radio.
 Whatever kind of look you were aiming for, you missed.
 I smell something burning. Are you trying to think again?
 You’re like a lighthouse in a desert: bright but not very useful.
@@ -228,9 +239,8 @@ You look easy to draw.
 Have you tried doing it the way I told you to the first time?
 You have the communication skills of an alarm clock.
 Well, at least you’re good-looking.
-
 Why don't you act like a human being or don't you do impersonations?
-You're NUMBER ONE in my book.  My book is called \"Creeps I Have Known\".
+You're NUMBER ONE in my book.  My book is called 'Creeps I Have Known'.
 You're bound to marry well - everyone is above you.
 There's nothing I won't do for you - and I'm going to keep on doing it.
 You're outstanding in your field, and that's where you should be -- out standing in your field.
@@ -246,9 +256,9 @@ You're not the person you used to be - and you never were.
 You have so much ugly, you could open store.
 If there's nothing to say, I'm sure you'll say it.
 You're quite a charmer - I'll get you a snake and a flute.
-Do I need you?  About as much as the \"Titanic\" needed more water.
+Do I need you?  About as much as the 'Titanic' needed more water.
 You're the kind of person I can't get over, so I'll go around you.
-Let me say three little words that will make you dance on air: \"Go hang yourself!\"
+Let me say three little words that will make you dance on air: 'Go hang yourself!'
 Your heart's in the right place - it's your head I'm worried about.
 You're making a fool of yourself, and I've never seen better craftmanship.
 When people ask me what I see in you, what can I tell them?
@@ -278,8 +288,44 @@ You look like a before picture.
 Ordinarily people live and learn. You just live.
 I had prepared for a battle of wits but I see you came unarmed.
 Calling you an idiot would be an insult to all stupid people.
+Thank you for making me feel better about my own problems.
+You’re like a cloud on a sunny day—completely unnecessary but somehow still here.
+You bring a lot to the table, like confusion and mildly entertaining chaos.
+You’re proof that not all heroes wear capes… or have any idea what they’re doing.
+You have the energy of someone who’s always 'just about to start working out' but never does.
+You’re the reason ‘bless your heart’ was invented.
+Your confidence is inspiring, considering you’re wrong most of the time.
+You’d survive a zombie apocalypse — because even zombies have standards.
+You’re the human version of a typo: unexpected, confusing, and oddly funny once we figure you out.
+You bring people together—mostly to gossip about you, but still, community matters.
+Talking to you is like watching a reality TV show — absolutely absurd, but I can’t stop.
+You’re an inspiration to procrastinators everywhere; you’ve truly mastered the art.
+You have the charm of a used car salesman but without the cars or the sales.
+You’re the reason group chats have mute buttons, and honestly, respect for that.
+You’re like a fire alarm during a drill—loud, obnoxious, and I know I should take you seriously, but I just can’t.
+Your level of delusion is honestly inspirational — how do you stay so confident while being so wrong?
+You’re like glitter — impossible to ignore and somehow always in places I don’t want you to be.
+Your existence proves that natural selection has a wicked sense of humor.
+You have the emotional range of a teaspoon, but damn, you make it entertaining.
+You’re the friend everyone wants around, mostly to feel better about their own life choices.
+Your commitment to not knowing what’s going on is honestly iconic.
+You’re like a fart in an elevator — unforgettable, for better or worse.
+You must have been first in line when they handed out personality... but skipped every other line after that.
+Talking to you is like arguing with a raccoon—confusing, chaotic, and strangely satisfying.
+You bring everyone so much joy… when you leave the room.
+Your secrets are safe with me. I never even listened in the first place.
+I’d agree with you, but then we’d both be wrong.
+You’re living proof that ‘fake it till you make it’ doesn’t always work.
+You’re the reason shampoo bottles have instructions.
+Your only redeeming quality is that you make everyone else look better by comparison.
+If ignorance is bliss, you must be the happiest person alive.
+I’d explain it to you, but I left my crayons at home.
 You have the perfect face for radio.
-Thank you for making me feel better about my own problems."
+You’re living proof that common sense isn’t as common as people think.
+You’re the human equivalent of a pop-up ad—annoying and always at the wrong time.
+You have the charm of a parking ticket and the timing of a fire alarm.
+You’re like a vending machine: unreliable, overpriced, and occasionally entertaining to punch.
+You have a great smile... shame about the rest of your face, though."
 
 function random() {
   if [ $(which shuf 2>/dev/null) ]; then
