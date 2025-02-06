@@ -24,6 +24,7 @@ oidIFSpeed=.1.3.6.1.2.1.31.1.1.1.15
 oidIFDuplex=.1.3.6.1.2.1.10.7.2.1.19
 oidIPToMAC=.1.3.6.1.2.1.4.22.1.2								#ipNetToMediaPhysAddress
 oidIFOperStatus=.1.3.6.1.2.1.2.2.1.8
+oidTrackStatus=.1.3.6.1.4.1.9.9.42.1.2.9.1.6		# Cisco IOS sh track
 
 NA="" # Not Available String
 
@@ -33,13 +34,16 @@ CISCO_MODEL_FILTER="s|||g"
 [ -n "$(command -v pktools_vars)" ]    && source pktools_vars
 [ -n "$(command -v isctools_common)" ] && source isctools_common
 
+source colors.sh
+
 function fixmac() {
 	local RAWMAC="$*"
 	if [ -z "$RAWMAC" ]; then
 		cat
 	else
 		echo "$RAWMAC"
-	fi | sed -E 's/"?([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2}) *"?/\1:\2:\3:\4:\5:\6/g' | sed -E 's/(^| |:)([0-9a-fA-F](:|$))/\10\2/g' | sed -E 's/(^| |:)([0-9a-fA-F](:|$))/\10\2/g'
+	fi | sed -E 's/"?([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2}) *"?/\1:\2:\3:\4:\5:\6/g' | sed -E 's/(^| )([0-9a-fA-F]:)/\10\2/g' | sed -E 's/(:)([0-9a-fA-F](:|$))/\10\2/g'
+	#fi | sed -E 's/"?([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2})[ :]([0-9A-F]{1,2}) *"?/\1:\2:\3:\4:\5:\6/g' | sed -E 's/(^| |:)([0-9a-fA-F](:|$))/\10\2/g' | sed -E 's/(^| |:)([0-9a-fA-F](:|$))/\10\2/g'
 
 }
 
@@ -315,6 +319,33 @@ function getLinkStatus() {
 		echo "$OUTPUT" | tail +2 | sort -V -k3,3
 }
 
+function getTrackStatus() {
+	local IP=$1
+	OUTPUT="$(( printf "%s\t%s\t%s\t%s\n" Track Status Link Description
+	while read -r ID EQUALS STATNUM; do
+		STATUS="UNKNOWN"
+		LINK="UNKNOWN"
+		DESC=""
+
+		[ "$STATNUM" -eq 2 ] && STATUS="↑UP"   && COLOR="$GREEN$BOLD"
+		[ "$STATNUM" -eq 1 ] && STATUS="↓DOWN" && COLOR="$RED$BOLD$BLINK"
+
+		[ "$ID" == "1111" ] && LINK="ISP1" && DESC="1.1.1.1 via ISP1"
+		[ "$ID" == "1112" ] && LINK="ISP2" && DESC="1.1.1.2 via ISP2"
+		[ "$ID" == "1113" ] && LINK="MERAKI" && DESC="1.1.1.3 via MERAKI"
+		[ "$ID" == "4221" ] && LINK="ISP1" && DESC="4.2.2.1 via ISP1"
+		[ "$ID" == "4222" ] && LINK="ISP2" && DESC="4.2.2.2 via ISP2"
+		[ "$ID" == "4223" ] && LINK="MERAKI" && DESC="4.2.2.2 via MERAKI"
+		[ "$ID" == "4224" ] && LINK="MERAKI" && DESC="4.2.2.4 via MERAKI"
+
+		printf "%s\t$COLOR%s$NC\t%s\t%s\n" "$ID" "$STATUS" "$LINK" "$DESC"
+	done < <(w $IP $oidTrackStatus | deoid $oidTrackStatus.) ) | column -t -s$'\t' -o$'\t')"
+	# " # This doublequote? To fix syntax highlighting in vim... Gnarly I know! ¯\_(ツ)_/¯
+
+		echo "$OUTPUT" | head -1 >&2 # Headers output to STDERR
+		echo "$OUTPUT" | tail +2 | sort -k3,3
+}
+
 declare -A IFINDEX
 declare -A IFSPEED
 declare -A IFDUPLEX
@@ -326,4 +357,5 @@ getIFIndices $IP
 [ "$SCRIPT" == "snmp-lldp" ] && getLLDP $IP
 [ "$SCRIPT" == "snmp-arp-table" ] && getARPTable $IP
 [ "$SCRIPT" == "snmp-link-status" ] && getLinkStatus $IP
+[ "$SCRIPT" == "snmp-track-status" ] && getTrackStatus $IP
 
