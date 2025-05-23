@@ -158,7 +158,8 @@ while true; do
   fi
   if [ $currcount -eq 1 ] && [ $streak = "$2" ] && [[ ! "$3" =~ "down" ]] && [ $pushcount -lt $pushlimit ]; then
     message="$message :: Notifying!"
-    pushpipe --title "Pinger UP: $printhost" -m "<font color='blue'>Host <b>$printhost</b> is now up!</font>" &
+    #pushpipe --title "Pinger UP: $printhost" -m "<font color='blue'>Host <b>$printhost</b> is now up!</font>" &
+    pushover.sh --html --title "Pinger UP: $printhost" -m "<font color='green'>Host <b>$printhost</b> is now up!</font>" &
     pushcount=$(($pushcount +1))
   fi
   if [ $currcount -eq 0 ] && [ $streak = "$2" ] && [[ ! "$3" =~ "up" ]] && [ $pushcount -lt $pushlimit ]; then
