@@ -6,17 +6,10 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 SLEEP=${1:-2}
 
-XCLIP=$(which xclip)
-if [ "$XCLIP" == "" ]; then
-    echo "Need to install xclip"
-    exit 1
-fi
+require_commands xclip xdotool || exit 1
 
 XDOTOOL=$(which xdotool)
-if [ "$XDOTOOL" == "" ]; then
-    echo "Need to install xdotool"
-    exit 1
-fi
+XCLIP=$(which xclip)
 
 TEXT=$($XCLIP -out -selection clipboard)
 
@@ -26,9 +19,10 @@ fi
 
 sleep $SLEEP
 
-ACTIVEWIN=$($XDOTOOL getactivewindow)
-if [ "$ACTIVEWIN" == "" ]; then
-    exit;
-fi
+#ACTIVEWIN=$($XDOTOOL getactivewindow)
+#if [ "$ACTIVEWIN" == "" ]; then
+#    exit;
+#fi
 
-$XDOTOOL type --window $ACTIVEWIN "$TEXT"
+#$XDOTOOL type --window $ACTIVEWIN "$TEXT"
+$XDOTOOL type "$TEXT"
