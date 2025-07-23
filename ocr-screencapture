@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#
+# A script to capture a screen region, run OCR on it,
+# and copy the resulting text to the clipboard.
+#
+
+# -- SETUP --
+# Define the temporary file path for the screenshot.
+# Using mktemp ensures we create a unique, temporary file securely.
+TMP_FILE=$(mktemp --suffix=.png)
+
+# -- CAPTURE --
+# Use KDE's spectacle to capture a rectangular region (-r) in the background (-b)
+# without launching the GUI (-n), and save it to our temporary file (-o).
+spectacle -b -n -r -o "$TMP_FILE"
+
+# -- VALIDATE --
+# Check if the screenshot file was actually created.
+# The user might press 'Esc' to cancel the screenshot.
+# The -s flag checks if the file exists and has a size greater than zero.
+if [ ! -s "$TMP_FILE" ]; then
+    # If the file is empty or doesn't exist, notify and exit.
+    notify-send "OCR Canceled" "No screenshot was taken."
+    exit 1
+fi
+
+# -- PROCESS --
+# Perform OCR on the captured image.
+# 'tesseract "$TMP_FILE" stdout' runs OCR and prints the text to standard output.
+# That output is then piped '|' to xclip.
+# 'xclip -selection clipboard' takes the input and puts it on the system clipboard.
+tesseract "$TMP_FILE" stdout | xclip -selection clipboard
+
+# -- NOTIFY & CLEAN UP --
+# Send a desktop notification to confirm the text has been copied.
+notify-send "OCR Successful" "Text has been copied to the clipboard."
+
+# Remove the temporary screenshot file.
+rm "$TMP_FILE"
+
+exit 0
